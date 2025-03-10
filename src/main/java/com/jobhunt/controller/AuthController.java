@@ -2,6 +2,7 @@ package com.jobhunt.controller;
 
 import com.jobhunt.model.request.LoginRequest;
 import com.jobhunt.model.response.LoginResponse;
+import com.jobhunt.payload.Response;
 import com.jobhunt.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,7 @@ public class AuthController {
 
     @GetMapping("/account")
     public ResponseEntity<?> getAccount() {
-        var userLogin = authService.getAccount();
-        return ResponseEntity.ok(userLogin);
+        return ResponseEntity.ok(Response.ofSucceeded(authService.getAccount()));
     }
 
     @GetMapping("/refresh")
