@@ -1,42 +1,60 @@
 package com.jobhunt.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.jobhunt.enums.StatusEnum;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
-@EntityListeners(AuditTrailListener.class)
 @Entity
-@Data
 @Table(name = "users")
+@Data
 public class User {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Column(unique = true)
+  private String username;
 
-    private String firstname;
+  @Column(unique = true)
+  private String email;
 
-    private String lastname;
+  @Column(name = "first_name", nullable = false)
+  private String firstName;
 
-    private String username;
+  @Column(name = "last_name", nullable = false)
+  private String lastName;
 
-    private String email;
+  @Column(name = "phone_number")
+  private String phoneNumber;
 
-    private String password;
+  @Column(name = "profile_picture_url")
+  private String profilePictureUrl;
 
-    @Column(columnDefinition = "TEXT")
-    private String refreshToken;
+  @Column(name = "keycloak_id")
+  private String keycloakId;
 
-    @Enumerated(EnumType.STRING)
-    private StatusEnum status;
+  @Column(name = "refresh_token")
+  private String refreshToken;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT + 7")
-    private Instant createdAt;
+  @Column(name = "is_active")
+  private boolean active = true;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT + 7")
-    private Instant updatedAt;
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
 
+  @UpdateTimestamp
+  @Column(name = "updated_at")
+  private Instant updatedAt;
+
+  @OneToMany(mappedBy = "user")
+  private Set<Review> reviewsGiven = new HashSet<>();
+
+  @OneToMany(mappedBy = "user")
+  private Set<Application> applications = new HashSet<>();
 }

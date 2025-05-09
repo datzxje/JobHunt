@@ -5,13 +5,19 @@ import lombok.Data;
 @Data
 public class SignUpResponse {
 
-    private String firstname;
+    private String id;
 
-    private String lastname;
+    private String firstName;
 
-    private String username;
+    private String lastName;
+
+    private String keycloakUsername;
 
     private String email;
+
+    private String phoneNumber;
+
+    private String profilePictureUrl;
 
     private String status;
 

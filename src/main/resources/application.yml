@@ -1,0 +1,42 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /profile
+spring:
+  application:
+    name: profile-service
+  data:
+      uri:
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/jobhunt
+          jwk-set-uri: http://localhost:8180/realms/jobhunt/protocol/openid-connect/certs
+
+keycloak:
+  auth-server-url: http://localhost:8180
+  realm: jobhunt
+  resource: jobhunt
+  public-client: false
+  principal-attribute: preferred_username
+  ssl-required: external
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  access-token-validity-time: 3600
+  refresh-token-validity-time: 86400
+
+aws:
+  access:
+    key:
+      id: ${AWS_ACCESS_KEY_ID}
+  secret:
+    access:
+      key: ${AWS_SECRET_ACCESS_KEY}
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+    region: ${AWS_REGION}
