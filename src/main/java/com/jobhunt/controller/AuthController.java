@@ -1,56 +1,65 @@
 package com.jobhunt.controller;
 
+import com.jobhunt.model.request.ChangePasswordRequest;
 import com.jobhunt.model.request.LoginRequest;
-import com.jobhunt.model.response.LoginResponse;
+import com.jobhunt.model.request.SignUpRequest;
 import com.jobhunt.payload.Response;
 import com.jobhunt.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+  private final AuthService authService;
 
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        var response = authService.login(loginRequest);
-        ResponseCookie refreshCookie = authService.createRefreshCookie(response.getAccessToken());
+  @PostMapping("/login")
+  public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    return ResponseEntity.ok(Response.ofSucceeded(authService.login(request)));
+  }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(response);
-    }
+  @PostMapping("/signup")
+  public ResponseEntity<?> signup(@Valid @RequestBody SignUpRequest request) {
+    return ResponseEntity.ok(Response.ofSucceeded(authService.signup(request)));
+  }
 
-    @GetMapping("/account")
-    public ResponseEntity<?> getAccount() {
-        return ResponseEntity.ok(Response.ofSucceeded(authService.getAccount()));
-    }
+  @PostMapping("/logout")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<?> logout(@RequestParam String refreshToken) {
+    authService.logout(refreshToken);
+    return ResponseEntity.ok(Response.ofSucceeded());
+  }
 
-    @GetMapping("/refresh")
-    public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken") String refreshToken) {
-        var response = authService.refresh(refreshToken);
-        var newRefreshCookie = authService.createRefreshCookie(response.getAccessToken());
+  @PostMapping("/refresh-token")
+  public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
+    return ResponseEntity.ok(Response.ofSucceeded(authService.refreshToken(refreshToken)));
+  }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, newRefreshCookie.toString())
-                .body(response);
-    }
+  @PostMapping("/change-password")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<?> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
+    String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+    authService.changePassword(Long.parseLong(userId), request);
+    return ResponseEntity.ok(Response.ofSucceeded());
+  }
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        authService.logout();
+  @PostMapping("/reset-password")
+  public ResponseEntity<?> resetPassword(@RequestParam String email) {
+    authService.resetPassword(email);
+    return ResponseEntity.ok(Response.ofSucceeded());
+  }
 
-        var deleteCookie = authService.createDeleteCookie();
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
-                .body("Successfully logged out");
-    }
+  @PostMapping("/reset-password/confirm")
+  public ResponseEntity<?> confirmResetPassword(
+      @RequestParam String token,
+      @RequestParam String newPassword) {
+    authService.confirmResetPassword(token, newPassword);
+    return ResponseEntity.ok(Response.ofSucceeded());
+  }
 }

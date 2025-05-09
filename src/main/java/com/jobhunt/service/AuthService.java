@@ -1,19 +1,22 @@
 package com.jobhunt.service;
 
+import com.jobhunt.model.request.ChangePasswordRequest;
 import com.jobhunt.model.request.LoginRequest;
-import com.jobhunt.model.response.LoginResponse;
-import org.springframework.http.ResponseCookie;
+import com.jobhunt.model.request.SignUpRequest;
+import com.jobhunt.model.response.AuthResponse;
 
 public interface AuthService {
-    LoginResponse login(LoginRequest loginRequest);
+  AuthResponse login(LoginRequest request);
 
-    ResponseCookie createRefreshCookie(String refreshToken);
+  AuthResponse signup(SignUpRequest request);
 
-    LoginResponse refresh(String refreshToken);
+  void logout(String refreshToken);
 
-    void logout();
+  AuthResponse refreshToken(String refreshToken);
 
-    ResponseCookie createDeleteCookie();
+  void changePassword(Long userId, ChangePasswordRequest request);
 
-    LoginResponse.UserLogin getAccount();
+  void resetPassword(String email);
+
+  void confirmResetPassword(String token, String newPassword);
 }
