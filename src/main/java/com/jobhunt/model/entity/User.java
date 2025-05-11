@@ -57,4 +57,7 @@ public class User {
 
   @OneToMany(mappedBy = "user")
   private Set<Application> applications = new HashSet<>();
+
+  @OneToMany(mappedBy = "user")
+  private Set<SavedJob> savedJobs = new HashSet<>();
 }

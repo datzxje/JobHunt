@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class S3FileStorageService implements FileStorageService {
+public class S3FileStorageServiceImpl implements FileStorageService {
 
   private final AmazonS3 s3Client;
 

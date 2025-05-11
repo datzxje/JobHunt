@@ -7,32 +7,29 @@ import com.jobhunt.model.response.CompanyResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
 public interface CompanyMapper {
-  CompanyMapper INSTANCE = Mappers.getMapper(CompanyMapper.class);
-
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "user", ignore = true)
-  @Mapping(target = "jobs", ignore = true)
-  @Mapping(target = "reviews", ignore = true)
   @Mapping(target = "active", constant = "true")
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
-  Company toEntity(CompanyRequest request);
-
-  @Mapping(target = "averageRating", expression = "java(calculateAverageRating(company))")
-  @Mapping(target = "totalReviews", expression = "java(company.getReviews().size())")
-  CompanyResponse toResponse(Company company);
-
-  @Mapping(target = "id", ignore = true)
   @Mapping(target = "user", ignore = true)
   @Mapping(target = "jobs", ignore = true)
   @Mapping(target = "reviews", ignore = true)
+  Company toEntity(CompanyRequest request);
+
+  @Mapping(target = "averageRating", expression = "java(calculateAverageRating(company))")
+  @Mapping(target = "totalReviews", expression = "java(company.getReviews() != null ? (long)company.getReviews().size() : 0L)")
+  CompanyResponse toResponse(Company company);
+
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "active", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "user", ignore = true)
+  @Mapping(target = "jobs", ignore = true)
+  @Mapping(target = "reviews", ignore = true)
   void updateCompanyFromDto(CompanyRequest request, @MappingTarget Company company);
 
   default Double calculateAverageRating(Company company) {

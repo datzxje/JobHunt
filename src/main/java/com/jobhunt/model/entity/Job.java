@@ -68,6 +68,9 @@ public class Job {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
+  @OneToMany(mappedBy = "job")
+  private Set<SavedJob> savedByUsers = new HashSet<>();
+
   public enum EmploymentType {
     FULL_TIME,
     PART_TIME,
