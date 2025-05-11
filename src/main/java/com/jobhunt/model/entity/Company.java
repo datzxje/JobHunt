@@ -17,26 +17,56 @@ public class Company {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  // Company Profile Section
+  @Column(name = "logo_url")
+  private String logoUrl;
+
+  @Column(name = "cover_url")
+  private String coverUrl;
+
   @Column(nullable = false)
   private String name;
 
-  @Column(nullable = false, columnDefinition = "TEXT")
-  private String description;
+  @Column(nullable = false)
+  private String email;
+
+  @Column(name = "phone_number")
+  private String phoneNumber;
 
   @Column(name = "website_url")
   private String websiteUrl;
 
-  @Column(nullable = false)
-  private String address;
-
-  @Column(name = "company_size")
-  private Integer companySize;
-
   @Column(name = "establishment_year")
   private Integer establishmentYear;
 
+  @Column(name = "team_size")
+  private Integer teamSize;
+
   @Column(name = "industry_type", nullable = false)
   private String industryType;
+
+  @Column(columnDefinition = "TEXT")
+  private String about;
+
+  // Social Network Section
+  @Column(name = "facebook_url")
+  private String facebookUrl;
+
+  @Column(name = "twitter_url")
+  private String twitterUrl;
+
+  @Column(name = "linkedin_url")
+  private String linkedinUrl;
+
+  @Column(name = "google_plus_url")
+  private String googlePlusUrl;
+
+  // Contact Information Section
+  private String country;
+  private String city;
+  private String address;
+  private Double latitude;
+  private Double longitude;
 
   @Column(name = "tax_id", nullable = false, unique = true)
   private String taxId;

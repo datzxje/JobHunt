@@ -4,7 +4,6 @@ import com.jobhunt.exception.BadRequestException;
 import com.jobhunt.exception.ResourceNotFoundException;
 import com.jobhunt.mapper.CompanyMapper;
 import com.jobhunt.model.entity.Company;
-import com.jobhunt.model.entity.User;
 import com.jobhunt.model.request.CompanyRequest;
 import com.jobhunt.model.response.CompanyResponse;
 import com.jobhunt.repository.CompanyRepository;
@@ -27,10 +26,6 @@ public class CompanyServiceImpl implements CompanyService {
   @Transactional
   public CompanyResponse createCompany(CompanyRequest request) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
-
-    if (companyRepository.existsByTaxId(request.getTaxId())) {
-      throw new BadRequestException("Company with this tax ID already exists");
-    }
 
     var user = userRepository.findById(Long.parseLong(currentUserId))
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));

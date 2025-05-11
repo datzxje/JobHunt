@@ -27,24 +27,24 @@ public class JobController {
 
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('EMPLOYER')")
-  public ResponseEntity<?> updateJob(@PathVariable String id, @Valid @RequestBody JobRequest request) {
+  public ResponseEntity<?> updateJob(@PathVariable Long id, @Valid @RequestBody JobRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.updateJob(id, request)));
   }
 
   @DeleteMapping("/{id}")
   @PreAuthorize("hasRole('EMPLOYER')")
-  public ResponseEntity<?> deleteJob(@PathVariable String id) {
+  public ResponseEntity<?> deleteJob(@PathVariable Long id) {
     jobService.deleteJob(id);
     return ResponseEntity.ok(Response.ofSucceeded());
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<?> getJob(@PathVariable String id) {
+  public ResponseEntity<?> getJob(@PathVariable Long id) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.getJob(id)));
   }
 
   @GetMapping("/company/{companyId}")
-  public ResponseEntity<?> getCompanyJobs(@PathVariable String companyId) {
+  public ResponseEntity<?> getCompanyJobs(@PathVariable Long companyId) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.getCompanyJobs(companyId)));
   }
 
@@ -57,5 +57,34 @@ public class JobController {
       @RequestParam(required = false) Boolean isRemote) {
     return ResponseEntity.ok(Response.ofSucceeded(
         jobService.searchJobs(keyword, location, employmentType, experienceLevel, isRemote)));
+  }
+
+  @GetMapping("/applied")
+  @PreAuthorize("hasRole('CANDIDATE')")
+  public ResponseEntity<?> getAppliedJobs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getAppliedJobs(page, size)));
+  }
+
+  @PostMapping("/{id}/save")
+  @PreAuthorize("hasRole('CANDIDATE')")
+  public ResponseEntity<?> saveJob(@PathVariable Long id) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.saveJob(id)));
+  }
+
+  @DeleteMapping("/{id}/save")
+  @PreAuthorize("hasRole('CANDIDATE')")
+  public ResponseEntity<?> unsaveJob(@PathVariable Long id) {
+    jobService.unsaveJob(id);
+    return ResponseEntity.ok(Response.ofSucceeded());
+  }
+
+  @GetMapping("/saved")
+  @PreAuthorize("hasRole('CANDIDATE')")
+  public ResponseEntity<?> getSavedJobs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getSavedJobs(page, size)));
   }
 }
