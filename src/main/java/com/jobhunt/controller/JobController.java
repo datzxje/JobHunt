@@ -1,7 +1,6 @@
 package com.jobhunt.controller;
 
 import com.jobhunt.model.request.JobRequest;
-import com.jobhunt.model.response.JobResponse;
 import com.jobhunt.payload.Response;
 import com.jobhunt.service.JobService;
 import jakarta.validation.Valid;
@@ -9,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/jobs")
