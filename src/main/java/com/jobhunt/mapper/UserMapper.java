@@ -20,6 +20,7 @@ public interface UserMapper {
     @Mapping(target = "refreshToken", ignore = true)
     @Mapping(target = "reviewsGiven", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "savedJobs", ignore = true)
     User toEntity(SignUpRequest signUpRequest);
 
     @Mapping(target = "firstname", source = "firstName")
@@ -39,6 +40,7 @@ public interface UserMapper {
     @Mapping(target = "refreshToken", ignore = true)
     @Mapping(target = "reviewsGiven", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "savedJobs", ignore = true)
     void updateUserFromDto(UserRequest userRequest, @MappingTarget User user);
 
     @Mapping(target = "id", ignore = true)
