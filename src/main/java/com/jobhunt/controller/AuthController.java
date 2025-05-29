@@ -5,8 +5,11 @@ import com.jobhunt.model.request.LoginRequest;
 import com.jobhunt.model.request.SignUpRequest;
 import com.jobhunt.payload.Response;
 import com.jobhunt.service.AuthService;
+import com.jobhunt.exception.BadRequestException;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,15 +33,28 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  @PreAuthorize("isAuthenticated()")
-  public ResponseEntity<?> logout(@RequestParam String refreshToken) {
-    authService.logout(refreshToken);
+  public ResponseEntity<?> logout() {
+    try {
+      authService.logout();
+    } catch (Exception e) {
+      // Vẫn xóa cookie ngay cả khi không tìm thấy user
+    }
     return ResponseEntity.ok(Response.ofSucceeded());
   }
 
   @PostMapping("/refresh-token")
-  public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
-    return ResponseEntity.ok(Response.ofSucceeded(authService.refreshToken(refreshToken)));
+  public ResponseEntity<?> refreshToken() {
+    return ResponseEntity.ok(Response.ofSucceeded(authService.refreshToken()));
+  }
+
+  /**
+   * Endpoint để lấy thông tin người dùng hiện tại từ token
+   * 
+   * @return thông tin người dùng hoặc 401 Unauthorized nếu không xác thực
+   */
+  @GetMapping("/me")
+  public ResponseEntity<?> getCurrentUser() {
+      return ResponseEntity.ok(Response.ofSucceeded(authService.getCurrentUser()));
   }
 
   @PostMapping("/change-password")

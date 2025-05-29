@@ -35,4 +35,8 @@ public class SignUpRequest {
 
     private String profilePictureUrl;
 
+    @NotBlank(message = "Role is required")
+    @Pattern(regexp = "^(EMPLOYER|CANDIDATE)$", message = "Role must be either EMPLOYER or CANDIDATE")
+    private String role;
+
 }

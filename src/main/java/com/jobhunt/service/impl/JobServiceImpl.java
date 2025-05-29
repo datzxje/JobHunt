@@ -43,7 +43,7 @@ public class JobServiceImpl implements JobService {
   public JobResponse createJob(JobRequest request) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    var user = userRepository.findById(Long.parseLong(currentUserId))
+    var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Company company = companyRepository.findByUserIdAndActiveTrue(user.getId())
@@ -63,7 +63,10 @@ public class JobServiceImpl implements JobService {
     Job job = jobRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-    if (!job.getCompany().getUser().getId().equals(currentUserId)) {
+    var user = userRepository.findByKeycloakId(currentUserId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (!job.getCompany().getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to update this job");
     }
 
@@ -79,7 +82,10 @@ public class JobServiceImpl implements JobService {
     Job job = jobRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-    if (!job.getCompany().getUser().getId().equals(currentUserId)) {
+    var user = userRepository.findByKeycloakId(currentUserId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (!job.getCompany().getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to delete this job");
     }
 
@@ -106,7 +112,7 @@ public class JobServiceImpl implements JobService {
   public JobResponse applyJob(Long id) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    User user = userRepository.findById(Long.parseLong(currentUserId))
+    User user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Job job = jobRepository.findById(id)
@@ -129,7 +135,7 @@ public class JobServiceImpl implements JobService {
   public Page<JobResponse> getAppliedJobs(int page, int size) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    User user = userRepository.findById(Long.parseLong(currentUserId))
+    User user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Pageable pageable = PageRequest.of(page, size);
@@ -159,7 +165,7 @@ public class JobServiceImpl implements JobService {
   public JobResponse saveJob(Long id) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    User user = userRepository.findById(Long.parseLong(currentUserId))
+    User user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Job job = jobRepository.findById(id)
@@ -182,7 +188,7 @@ public class JobServiceImpl implements JobService {
   public void unsaveJob(Long id) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    User user = userRepository.findById(Long.parseLong(currentUserId))
+    User user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Job job = jobRepository.findById(id)
@@ -195,7 +201,7 @@ public class JobServiceImpl implements JobService {
   public Page<JobResponse> getSavedJobs(int page, int size) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    User user = userRepository.findById(Long.parseLong(currentUserId))
+    User user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Pageable pageable = PageRequest.of(page, size);

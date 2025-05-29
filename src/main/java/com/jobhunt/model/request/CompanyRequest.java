@@ -3,7 +3,7 @@ package com.jobhunt.model.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
@@ -25,7 +25,7 @@ public class CompanyRequest {
   private String websiteUrl;
 
   @NotNull(message = "Establishment year is required")
-  @Past(message = "Establishment year must be in the past")
+  @Max(value = 2024, message = "Establishment year cannot be in the future")
   private Integer establishmentYear;
 
   @NotNull(message = "Team size is required")

@@ -3,6 +3,7 @@ package com.jobhunt.model.response;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 public class UserResponse {
@@ -22,5 +23,7 @@ public class UserResponse {
     private Instant updatedAt;
 
     private String status;
+
+    private List<String> roles;
 
 }

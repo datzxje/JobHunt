@@ -27,7 +27,7 @@ public class CompanyServiceImpl implements CompanyService {
   public CompanyResponse createCompany(CompanyRequest request) {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    var user = userRepository.findById(Long.parseLong(currentUserId))
+    var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     Company company = companyMapper.toEntity(request);
@@ -44,7 +44,10 @@ public class CompanyServiceImpl implements CompanyService {
     Company company = companyRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
 
-    if (!company.getUser().getId().equals(currentUserId)) {
+    var user = userRepository.findByKeycloakId(currentUserId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (!company.getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to update this company");
     }
 
@@ -60,7 +63,10 @@ public class CompanyServiceImpl implements CompanyService {
     Company company = companyRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
 
-    if (!company.getUser().getId().equals(currentUserId)) {
+    var user = userRepository.findByKeycloakId(currentUserId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (!company.getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to delete this company");
     }
 
@@ -79,7 +85,10 @@ public class CompanyServiceImpl implements CompanyService {
   public CompanyResponse getCurrentUserCompany() {
     String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
-    return companyRepository.findByUserIdAndActiveTrue(Long.parseLong(currentUserId))
+    var user = userRepository.findByKeycloakId(currentUserId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    return companyRepository.findByUserIdAndActiveTrue(user.getId())
         .map(companyMapper::toResponse)
         .orElseThrow(() -> new ResourceNotFoundException("Company not found for current user"));
   }

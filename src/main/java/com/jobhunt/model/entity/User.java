@@ -52,8 +52,11 @@ public class User {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @OneToMany(mappedBy = "user")
+  @OneToMany(mappedBy = "reviewer")
   private Set<Review> reviewsGiven = new HashSet<>();
+
+  @OneToMany(mappedBy = "reviewedUser")
+  private Set<Review> reviewsReceived = new HashSet<>();
 
   @OneToMany(mappedBy = "user")
   private Set<Application> applications = new HashSet<>();
