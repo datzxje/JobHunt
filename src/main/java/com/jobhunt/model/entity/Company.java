@@ -48,12 +48,7 @@ public class Company {
   @Column(columnDefinition = "TEXT")
   private String about;
 
-  // Company Admin
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "admin_user_id")
-  private User adminUser;
-
-  // Social Network Section
+  // Social Network Section (consolidated)
   @Column(name = "facebook_url")
   private String facebookUrl;
 
@@ -66,53 +61,37 @@ public class Company {
   @Column(name = "google_plus_url")
   private String googlePlusUrl;
 
-  // Additional Social Networks for Company Admin
-  @Column(name = "social_facebook")
-  private String socialFacebook;
-
-  @Column(name = "social_twitter")
-  private String socialTwitter;
-
-  @Column(name = "social_linkedin")
-  private String socialLinkedin;
-
   @Column(name = "social_instagram")
   private String socialInstagram;
 
-  // Contact Information Section
+  // Contact Information Section (consolidated)
   private String country;
   private String city;
   private String address;
   private Double latitude;
   private Double longitude;
 
-  // Additional Contact Information for Company Admin
-  @Column(name = "contact_phone")
-  private String contactPhone;
-
-  @Column(name = "contact_email")
-  private String contactEmail;
-
-  @Column(name = "contact_website")
-  private String contactWebsite;
-
-  @Column(name = "contact_address", columnDefinition = "TEXT")
-  private String contactAddress;
-
   @Column(name = "tax_id", nullable = false, unique = true)
   private String taxId;
 
+  // Company Owner/Creator (the user who initially manages the company)
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = true)
   private User user;
 
+  // Current Admin User (can be different from owner, used for company admin
+  // operations)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "admin_user_id")
+  private User adminUser;
+
+  // Relationships
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
   private Set<Job> jobs = new HashSet<>();
 
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
   private Set<Review> reviews = new HashSet<>();
 
-  // Company Admin Relationships
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
   private Set<CompanyJoinRequest> joinRequests = new HashSet<>();
 

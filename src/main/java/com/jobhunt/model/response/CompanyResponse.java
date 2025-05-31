@@ -13,7 +13,7 @@ public class CompanyResponse {
   private String phoneNumber;
   private String websiteUrl;
   private Integer establishmentYear;
-  private Integer teamSize;
+  private String teamSize;
   private String industryType;
   private String about;
 
@@ -22,6 +22,7 @@ public class CompanyResponse {
   private String twitterUrl;
   private String linkedinUrl;
   private String googlePlusUrl;
+  private String socialInstagram;
 
   // Contact Information Section
   private String country;

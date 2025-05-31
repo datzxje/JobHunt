@@ -50,6 +50,9 @@ public class CompanyRequest {
   @Pattern(regexp = "^(https?://)?(www\\.)?plus\\.google\\.com/.*$", message = "Invalid Google Plus URL")
   private String googlePlusUrl;
 
+  @Pattern(regexp = "^(https?://)?(www\\.)?instagram\\.com/.*$", message = "Invalid Instagram URL")
+  private String socialInstagram;
+
   // Contact Information Section
   @NotBlank(message = "Country is required")
   private String country;
