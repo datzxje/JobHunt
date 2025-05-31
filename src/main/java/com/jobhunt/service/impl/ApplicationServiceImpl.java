@@ -11,8 +11,8 @@ import com.jobhunt.repository.ApplicationRepository;
 import com.jobhunt.repository.JobRepository;
 import com.jobhunt.repository.UserRepository;
 import com.jobhunt.service.ApplicationService;
+import com.jobhunt.service.AuthService;
 import com.jobhunt.service.FileStorageService;
-import com.jobhunt.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {
 
+  private final AuthService authService;
   private final ApplicationRepository applicationRepository;
   private final JobRepository jobRepository;
   private final UserRepository userRepository;
@@ -32,8 +33,7 @@ public class ApplicationServiceImpl implements ApplicationService {
   @Override
   @Transactional
   public Application apply(ApplicationRequest request, MultipartFile cv) {
-    User user = userRepository.findByEmail(SecurityUtil.getCurrentUserLogin()
-        .orElseThrow(() -> new BadRequestException("User not found")))
+    User user = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
 
     Job job = jobRepository.findById(request.getJobId())
@@ -66,8 +66,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
   @Override
   public Page<Application> getUserApplications(Pageable pageable) {
-    User user = userRepository.findByEmail(SecurityUtil.getCurrentUserLogin()
-        .orElseThrow(() -> new BadRequestException("User not found")))
+    User user = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
     return applicationRepository.findByUser(user, pageable);
   }
@@ -93,8 +92,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     Application application = getApplication(id);
 
     // Check if the current user is the owner of the application
-    User currentUser = userRepository.findByEmail(SecurityUtil.getCurrentUserLogin()
-        .orElseThrow(() -> new BadRequestException("User not found")))
+    User currentUser = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
 
     if (!application.getUser().getId().equals(currentUser.getId())) {
@@ -115,8 +113,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     Application application = getApplication(id);
 
     // Check if the current user is the owner of the application
-    User currentUser = userRepository.findByEmail(SecurityUtil.getCurrentUserLogin()
-        .orElseThrow(() -> new BadRequestException("User not found")))
+    User currentUser = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
 
     if (!application.getUser().getId().equals(currentUser.getId())) {

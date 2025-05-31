@@ -2,16 +2,22 @@ server:
   port: 8080
   servlet:
     context-path: /profile
-spring:
-  application:
-    name: profile-service
-  data:
-      uri:
 
+spring:
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jobhunt
+    username: jobhunt
+    password: jobhunt
+    driverClassName: org.postgresql.Driver
   security:
     oauth2:
-      resourceserver:
-        jwt:
+      resource server:
+        jwt:  
           issuer-uri: http://localhost:8180/realms/jobhunt
           jwk-set-uri: http://localhost:8180/realms/jobhunt/protocol/openid-connect/certs
 
@@ -24,19 +30,33 @@ keycloak:
   ssl-required: external
   credentials:
     secret: ${KEYCLOAK_CLIENT_SECRET}
+  connection-pool-size: 10
+  connection-timeout: 5000
+  read-timeout: 5000
 
 jwt:
   secret: ${JWT_SECRET_KEY}
   access-token-validity-time: 3600
   refresh-token-validity-time: 86400
 
-aws:
-  access:
-    key:
-      id: ${AWS_ACCESS_KEY_ID}
-  secret:
+cloudflare:
+  r2:
     access:
-      key: ${AWS_SECRET_ACCESS_KEY}
-  s3:
-    bucket: ${AWS_S3_BUCKET}
-    region: ${AWS_REGION}
+      key:
+        id: ${CLOUDFLARE_R2_ACCESS_KEY}
+    secret:
+      access:
+        key: ${CLOUDFLARE_R2_SECRET_KEY}
+    endpoint: ${CLOUDFLARE_R2_ENDPOINT}
+    bucket: ${CLOUDFLARE_R2_BUCKET_NAME}
+    region: auto
+
+app:
+  cookie:
+    domain: localhost
+    secure: false
+    httpOnly: true
+    accessToken:
+      expiration: 3600
+    refreshToken:
+      expiration: 86400

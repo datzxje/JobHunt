@@ -21,11 +21,14 @@ public interface UserMapper {
     @Mapping(target = "reviewsGiven", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "savedJobs", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "reviewsReceived", ignore = true)
     User toEntity(SignUpRequest signUpRequest);
 
     @Mapping(target = "firstname", source = "firstName")
     @Mapping(target = "lastname", source = "lastName")
     @Mapping(target = "status", constant = "ACTIVE")
+    @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().name() : null)")
     UserResponse toResponse(User user);
 
     @Mapping(target = "active", ignore = true)
@@ -41,11 +44,12 @@ public interface UserMapper {
     @Mapping(target = "reviewsGiven", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "savedJobs", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "reviewsReceived", ignore = true)
     void updateUserFromDto(UserRequest userRequest, @MappingTarget User user);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "keycloakUsername", source = "email")
     @Mapping(target = "status", constant = "PENDING")
     SignUpResponse toResponse(SignUpRequest signUpRequest);
-
 }

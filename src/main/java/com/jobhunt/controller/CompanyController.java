@@ -41,6 +41,13 @@ public class CompanyController {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.getCompany(id)));
   }
 
+  @GetMapping
+  public ResponseEntity<?> getAllUsers(
+          @RequestParam(defaultValue = "0") int page,
+          @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(companyService.getAllCompanies(page, size)));
+  }
+
   @GetMapping("/me")
   @PreAuthorize("hasRole('EMPLOYER')")
   public ResponseEntity<?> getCurrentUserCompany() {

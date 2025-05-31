@@ -23,4 +23,6 @@ public class UserResponse {
 
     private String status;
 
+    private String role;
+
 }

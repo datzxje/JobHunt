@@ -34,8 +34,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserResponse> getAllUsers(int page) {
-        Pageable pageable = PageRequest.of(page, 6);
+    public Page<UserResponse> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         return userRepository.findAll(pageable)
                 .map(userMapper::toResponse);
     }

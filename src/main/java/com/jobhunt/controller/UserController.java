@@ -34,7 +34,7 @@ public class UserController {
     public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(Response.ofSucceeded(userService.getAllUsers(page)));
+        return ResponseEntity.ok(Response.ofSucceeded(userService.getAllUsers(page, size)));
     }
 
     @GetMapping("/search")

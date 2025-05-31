@@ -18,7 +18,7 @@ public class S3FileStorageServiceImpl implements FileStorageService {
 
   private final AmazonS3 s3Client;
 
-  @Value("${aws.s3.bucket}")
+  @Value("${cloudflare.r2.bucket}")
   private String bucketName;
 
   @Override
@@ -35,7 +35,7 @@ public class S3FileStorageServiceImpl implements FileStorageService {
       s3Client.putObject(putObjectRequest);
       return s3Client.getUrl(bucketName, key).toString();
     } catch (IOException e) {
-      throw new RuntimeException("Failed to upload file to S3", e);
+      throw new RuntimeException("Failed to upload file to R2", e);
     }
   }
 

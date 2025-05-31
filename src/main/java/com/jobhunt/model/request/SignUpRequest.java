@@ -30,9 +30,13 @@ public class SignUpRequest {
     private String confirmPassword;
 
     @NotBlank(message = "Phone number must not be empty")
-    @Pattern(regexp = "^\\+?[1-9][0-9]{7,14}$", message = "Phone number must be valid")
+    @Pattern(regexp = "^(09|03)\\d{8}$", message = "Phone number must be valid")
     private String phoneNumber;
 
     private String profilePictureUrl;
+
+    @NotBlank(message = "Role is required")
+    @Pattern(regexp = "^(EMPLOYER|CANDIDATE)$", message = "Role must be either EMPLOYER or CANDIDATE")
+    private String role;
 
 }
