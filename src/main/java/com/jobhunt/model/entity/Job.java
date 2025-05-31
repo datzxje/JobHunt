@@ -57,6 +57,10 @@ public class Job {
   @JoinColumn(name = "company_id", nullable = false)
   private Company company;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "posted_by")
+  private User postedBy;
+
   @OneToMany(mappedBy = "job", cascade = CascadeType.ALL)
   private Set<Application> applications = new HashSet<>();
 
