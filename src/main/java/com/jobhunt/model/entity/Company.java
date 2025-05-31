@@ -103,7 +103,7 @@ public class Company {
   private String taxId;
 
   @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id", nullable = true)
   private User user;
 
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)

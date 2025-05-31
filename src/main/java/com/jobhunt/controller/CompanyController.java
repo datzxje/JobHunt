@@ -16,11 +16,19 @@ public class CompanyController {
 
   private final CompanyService companyService;
 
-  @PostMapping
-  @PreAuthorize("hasRole('EMPLOYER')")
-  public ResponseEntity<?> createCompany(@Valid @RequestBody CompanyRequest request) {
-    return ResponseEntity.ok(Response.ofSucceeded(companyService.createCompany(request)));
-  }
+  // Removed: Admin cannot create new companies
+  // Companies should be added directly to database
+  /*
+   * @PostMapping
+   * 
+   * @PreAuthorize("hasRole('EMPLOYER')")
+   * public ResponseEntity<?> createCompany(@Valid @RequestBody CompanyRequest
+   * request) {
+   * return
+   * ResponseEntity.ok(Response.ofSucceeded(companyService.createCompany(request))
+   * );
+   * }
+   */
 
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('EMPLOYER')")

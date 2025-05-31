@@ -55,7 +55,10 @@ public class CompanyServiceImpl implements CompanyService {
     var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    if (!company.getUser().getId().equals(user.getId())) {
+    // If company doesn't have a user assigned yet, assign current user as owner
+    if (company.getUser() == null) {
+      company.setUser(user);
+    } else if (!company.getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to update this company");
     }
 
@@ -74,7 +77,8 @@ public class CompanyServiceImpl implements CompanyService {
     var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    if (!company.getUser().getId().equals(user.getId())) {
+    // Only allow deletion if user owns the company or company has no owner
+    if (company.getUser() != null && !company.getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to delete this company");
     }
 
