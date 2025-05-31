@@ -17,7 +17,7 @@ spring:
   security:
     oauth2:
       resource server:
-        jwt:
+        jwt:  
           issuer-uri: http://localhost:8180/realms/jobhunt
           jwk-set-uri: http://localhost:8180/realms/jobhunt/protocol/openid-connect/certs
 

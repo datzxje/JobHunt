@@ -8,12 +8,6 @@ import com.jobhunt.model.response.UserResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.util.Collections;
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
@@ -27,12 +21,14 @@ public interface UserMapper {
     @Mapping(target = "reviewsGiven", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "savedJobs", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "reviewsReceived", ignore = true)
     User toEntity(SignUpRequest signUpRequest);
 
     @Mapping(target = "firstname", source = "firstName")
     @Mapping(target = "lastname", source = "lastName")
     @Mapping(target = "status", constant = "ACTIVE")
-    @Mapping(target = "roles", expression = "java(extractRolesFromSecurityContext())")
+    @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().name() : null)")
     UserResponse toResponse(User user);
 
     @Mapping(target = "active", ignore = true)
@@ -48,25 +44,12 @@ public interface UserMapper {
     @Mapping(target = "reviewsGiven", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "savedJobs", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "reviewsReceived", ignore = true)
     void updateUserFromDto(UserRequest userRequest, @MappingTarget User user);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "keycloakUsername", source = "email")
     @Mapping(target = "status", constant = "PENDING")
     SignUpResponse toResponse(SignUpRequest signUpRequest);
-
-    default List<String> extractRolesFromSecurityContext() {
-        try {
-            var authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getAuthorities() != null) {
-                return authentication.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .map(role -> role.startsWith("ROLE_") ? role.substring(5) : role)
-                        .toList();
-            }
-        } catch (Exception e) {
-            // If no authentication context, return empty list
-        }
-        return Collections.emptyList();
-    }
 }

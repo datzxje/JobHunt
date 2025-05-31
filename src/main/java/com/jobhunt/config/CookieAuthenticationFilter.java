@@ -28,8 +28,7 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
         requestURI.contains("/api/v1/auth/signup") ||
         requestURI.contains("/api/v1/auth/refresh-token") ||
         requestURI.contains("/api/v1/auth/logout") ||
-        requestURI.contains("/api/v1/auth/me")
-    ) {
+        requestURI.contains("/api/v1/auth/me")) {
       filterChain.doFilter(request, response);
       return;
     }

@@ -2,6 +2,7 @@ package com.jobhunt.service;
 
 import com.jobhunt.model.request.CompanyRequest;
 import com.jobhunt.model.response.CompanyResponse;
+import org.springframework.data.domain.Page;
 
 public interface CompanyService {
   CompanyResponse createCompany(CompanyRequest request);
@@ -11,6 +12,8 @@ public interface CompanyService {
   void deleteCompany(Long id);
 
   CompanyResponse getCompany(Long id);
+
+  Page<CompanyResponse> getAllCompanies(int page, int size);
 
   CompanyResponse getCurrentUserCompany();
 }

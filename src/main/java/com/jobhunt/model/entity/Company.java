@@ -40,7 +40,7 @@ public class Company {
   private Integer establishmentYear;
 
   @Column(name = "team_size")
-  private Integer teamSize;
+  private String teamSize;
 
   @Column(name = "industry_type", nullable = false)
   private String industryType;

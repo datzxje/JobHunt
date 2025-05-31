@@ -54,7 +54,7 @@ public class AuthController {
    */
   @GetMapping("/me")
   public ResponseEntity<?> getCurrentUser() {
-      return ResponseEntity.ok(Response.ofSucceeded(authService.getCurrentUser()));
+    return ResponseEntity.ok(Response.ofSucceeded(authService.getCurrentUser()));
   }
 
   @PostMapping("/change-password")

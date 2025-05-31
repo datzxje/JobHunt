@@ -9,7 +9,7 @@ public interface UserService {
 
     UserResponse getUserById(Long userID);
 
-    Page<UserResponse> getAllUsers(int page);
+    Page<UserResponse> getAllUsers(int page, int size);
 
     Page<UserResponse> searchUsers(String name, String email, String predicateType,
             int pageNumber, int pageSize, String sortBy, String sortDir);

@@ -25,12 +25,12 @@ public class CompanyRequest {
   private String websiteUrl;
 
   @NotNull(message = "Establishment year is required")
-  @Max(value = 2024, message = "Establishment year cannot be in the future")
+  @Max(value = 2025, message = "Establishment year cannot be in the future")
   private Integer establishmentYear;
 
   @NotNull(message = "Team size is required")
   @Positive(message = "Team size must be positive")
-  private Integer teamSize;
+  private String teamSize;
 
   @NotBlank(message = "Industry type is required")
   private String industryType;
@@ -60,10 +60,8 @@ public class CompanyRequest {
   @NotBlank(message = "Address is required")
   private String address;
 
-  @NotNull(message = "Latitude is required")
   private Double latitude;
 
-  @NotNull(message = "Longitude is required")
   private Double longitude;
 
   @NotBlank(message = "Tax ID is required")

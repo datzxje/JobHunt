@@ -1,6 +1,7 @@
 package com.jobhunt.model.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -41,6 +42,10 @@ public class User {
   @Column(name = "refresh_token")
   private String refreshToken;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false)
+  private UserRole role;
+
   @Column(name = "is_active")
   private boolean active = true;
 
@@ -63,4 +68,10 @@ public class User {
 
   @OneToMany(mappedBy = "user")
   private Set<SavedJob> savedJobs = new HashSet<>();
+
+  public enum UserRole {
+    CANDIDATE,
+    EMPLOYER,
+    ADMIN
+  }
 }
