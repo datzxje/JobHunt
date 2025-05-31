@@ -39,4 +39,7 @@ public class SignUpRequest {
     @Pattern(regexp = "^(EMPLOYER|CANDIDATE)$", message = "Role must be either EMPLOYER or CANDIDATE")
     private String role;
 
+    // Company ID for EMPLOYER role
+    private Long companyId;
+
 }

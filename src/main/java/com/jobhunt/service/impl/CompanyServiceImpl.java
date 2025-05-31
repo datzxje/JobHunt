@@ -6,6 +6,7 @@ import com.jobhunt.mapper.CompanyMapper;
 import com.jobhunt.model.entity.Company;
 import com.jobhunt.model.request.CompanyRequest;
 import com.jobhunt.model.response.CompanyResponse;
+import com.jobhunt.model.response.CompanySelectionResponse;
 import com.jobhunt.model.response.UserResponse;
 import com.jobhunt.repository.CompanyRepository;
 import com.jobhunt.repository.UserRepository;
@@ -17,6 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -102,5 +106,18 @@ public class CompanyServiceImpl implements CompanyService {
     return companyRepository.findByUserIdAndActiveTrue(user.getId())
         .map(companyMapper::toResponse)
         .orElseThrow(() -> new ResourceNotFoundException("Company not found for current user"));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CompanySelectionResponse> getCompaniesForSelection() {
+    return companyRepository.findByActiveTrue()
+        .stream()
+        .map(company -> new CompanySelectionResponse(
+            company.getId(),
+            company.getName(),
+            company.getLogoUrl(),
+            company.getIndustryType()))
+        .collect(Collectors.toList());
   }
 }

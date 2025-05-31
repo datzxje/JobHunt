@@ -5,12 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobhunt.exception.BadRequestException;
 import com.jobhunt.mapper.UserMapper;
 import com.jobhunt.model.entity.User;
+import com.jobhunt.model.entity.Company;
+import com.jobhunt.model.entity.CompanyJoinRequest;
 import com.jobhunt.model.request.ChangePasswordRequest;
 import com.jobhunt.model.request.LoginRequest;
 import com.jobhunt.model.request.SignUpRequest;
 import com.jobhunt.model.response.AuthResponse;
 import com.jobhunt.model.response.UserResponse;
 import com.jobhunt.repository.UserRepository;
+import com.jobhunt.repository.CompanyRepository;
+import com.jobhunt.repository.CompanyJoinRequestRepository;
 import com.jobhunt.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,6 +57,8 @@ public class AuthServiceImpl implements AuthService {
   private final UserMapper userMapper;
   private final HttpServletResponse response;
   private final HttpServletRequest request;
+  private final CompanyRepository companyRepository;
+  private final CompanyJoinRequestRepository companyJoinRequestRepository;
 
   @Autowired
   private JwtDecoder jwtDecoder;
@@ -164,6 +170,17 @@ public class AuthServiceImpl implements AuthService {
       throw new BadRequestException("Username already exists");
     }
 
+    // Validate company selection for EMPLOYER role
+    if ("EMPLOYER".equals(request.getRole())) {
+      if (request.getCompanyId() == null) {
+        throw new BadRequestException("Company selection is required for EMPLOYER role");
+      }
+
+      // Verify company exists
+      Company company = companyRepository.findById(request.getCompanyId())
+          .orElseThrow(() -> new BadRequestException("Selected company not found"));
+    }
+
     Keycloak keycloak = getAdminKeycloak();
     RealmResource realmResource = keycloak.realm(realm);
     UsersResource usersResource = realmResource.users();
@@ -210,8 +227,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // Create user in database (without roles)
+    User newUser;
     try {
-      User newUser = new User();
+      newUser = new User();
       newUser.setUsername(request.getUsername());
       newUser.setEmail(request.getEmail());
       newUser.setFirstName(request.getFirstName());
@@ -226,6 +244,35 @@ public class AuthServiceImpl implements AuthService {
     } catch (Exception e) {
       log.error("Failed to create user in database: {}", e.getMessage(), e);
       throw new BadRequestException("Failed to create user in database: " + e.getMessage());
+    }
+
+    // Create join request for EMPLOYER role
+    if ("EMPLOYER".equals(request.getRole())) {
+      try {
+        Company company = companyRepository.findById(request.getCompanyId()).get();
+
+        // Check if user already has a join request for this company
+        Optional<CompanyJoinRequest> existingRequest = companyJoinRequestRepository
+            .findByUserIdAndCompanyId(newUser.getId(), company.getId());
+
+        if (existingRequest.isEmpty() ||
+            !existingRequest.get().getStatus().equals(CompanyJoinRequest.RequestStatus.PENDING)) {
+          CompanyJoinRequest joinRequest = new CompanyJoinRequest();
+          joinRequest.setUser(newUser);
+          joinRequest.setCompany(company);
+          joinRequest.setStatus(CompanyJoinRequest.RequestStatus.PENDING);
+          joinRequest.setMessage("Join request created during registration");
+
+          companyJoinRequestRepository.save(joinRequest);
+          log.info("Successfully created join request for user {} to company {}", newUser.getId(), company.getId());
+        } else {
+          log.info("Join request already exists for user {} to company {}", newUser.getId(), company.getId());
+        }
+      } catch (Exception e) {
+        log.error("Failed to create join request: {}", e.getMessage(), e);
+        // Don't throw exception here as user creation was successful
+        log.warn("User created successfully but join request creation failed");
+      }
     }
 
     // Log the user in

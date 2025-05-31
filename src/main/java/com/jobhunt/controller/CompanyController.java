@@ -43,8 +43,8 @@ public class CompanyController {
 
   @GetMapping
   public ResponseEntity<?> getAllUsers(
-          @RequestParam(defaultValue = "0") int page,
-          @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.getAllCompanies(page, size)));
   }
 
@@ -52,5 +52,10 @@ public class CompanyController {
   @PreAuthorize("hasRole('EMPLOYER')")
   public ResponseEntity<?> getCurrentUserCompany() {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.getCurrentUserCompany()));
+  }
+
+  @GetMapping("/simple")
+  public ResponseEntity<?> getCompaniesForSelection() {
+    return ResponseEntity.ok(Response.ofSucceeded(companyService.getCompaniesForSelection()));
   }
 }
