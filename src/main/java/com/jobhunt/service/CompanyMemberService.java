@@ -46,4 +46,12 @@ public interface CompanyMemberService {
   boolean isUserAdminOfCompany(Long userId, Long companyId);
 
   long countMembersByRole(Long companyId, CompanyMember.MemberRole role);
+
+  /**
+   * Get companies where the user is an active admin
+   * 
+   * @param userId The user ID
+   * @return List of company memberships where user is admin
+   */
+  List<CompanyMemberResponse> getAdminMemberships(Long userId);
 }

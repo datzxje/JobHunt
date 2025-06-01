@@ -21,13 +21,14 @@ public class GlobalExceptionHandler {
     /**
      * Handle generic exceptions.
      *
-     * @param ex the exception
+     * @param ex      the exception
      * @param request the web request
      * @return a standardized error response
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Response<Void>> handleGenericException(Exception ex, WebRequest request) {
-        return buildErrorResponse("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, request.getDescription(false));
+        return buildErrorResponse("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
+                request.getDescription(false));
     }
 
     /**
@@ -44,7 +45,7 @@ public class GlobalExceptionHandler {
     /**
      * Handle EntityNotFoundException (400 Bad Request).
      *
-     * @param e the exception
+     * @param e       the exception
      * @param request the web request
      * @return a standardized error response
      */
@@ -54,9 +55,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle AccessDeniedException (403 Forbidden).
+     *
+     * @param e       the exception
+     * @param request the web request
+     * @return a standardized error response
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Response<Void>> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException e, WebRequest request) {
+        return buildErrorResponse(e.getMessage(), HttpStatus.FORBIDDEN, request.getDescription(false));
+    }
+
+    /**
      * Handle RuntimeException (400 Bad Request).
      *
-     * @param e the exception
+     * @param e       the exception
      * @param request the web request
      * @return a standardized error response
      */
@@ -68,7 +82,7 @@ public class GlobalExceptionHandler {
     /**
      * Handle validation errors (BindException).
      *
-     * @param ex the BindException
+     * @param ex      the BindException
      * @param request the web request
      * @return a standardized error response
      */

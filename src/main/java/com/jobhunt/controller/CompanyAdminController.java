@@ -8,6 +8,7 @@ import com.jobhunt.model.response.CompanyJoinRequestResponse;
 import com.jobhunt.model.response.CompanyMemberResponse;
 import com.jobhunt.model.response.TeamStatsResponse;
 import com.jobhunt.payload.Response;
+import com.jobhunt.service.CompanyAuthorizationService;
 import com.jobhunt.service.CompanyJoinRequestService;
 import com.jobhunt.service.CompanyMemberService;
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +35,7 @@ public class CompanyAdminController {
 
   private final CompanyJoinRequestService joinRequestService;
   private final CompanyMemberService memberService;
+  private final CompanyAuthorizationService authorizationService;
 
   // =============== JOIN REQUESTS ENDPOINTS ===============
 
@@ -46,6 +49,9 @@ public class CompanyAdminController {
 
     log.info("Getting join requests for company: {}, page: {}, size: {}, status: {}",
         companyId, page, size, status);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
 
     Pageable pageable = PageRequest.of(page, size);
     Page<CompanyJoinRequestResponse> requests;
@@ -64,6 +70,12 @@ public class CompanyAdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> getJoinRequestById(@PathVariable Long id) {
     log.info("Getting join request by id: {}", id);
+
+    // Validate admin access to this join request
+    if (!authorizationService.canAccessJoinRequest(id)) {
+      throw new AccessDeniedException("You are not authorized to access this join request");
+    }
+
     return ResponseEntity.ok(Response.ofSucceeded(joinRequestService.getJoinRequestById(id)));
   }
 
@@ -74,6 +86,10 @@ public class CompanyAdminController {
       @RequestParam Long userId) {
 
     log.info("Creating join request for user: {} to company: {}", userId, request.getCompanyId());
+
+    // Note: For creating join requests, we don't need company admin validation
+    // as this is for employers requesting to join a company
+
     return ResponseEntity.ok(Response.ofSucceeded(joinRequestService.createJoinRequest(request, userId)));
   }
 
@@ -84,6 +100,12 @@ public class CompanyAdminController {
       @RequestParam Long reviewerId) {
 
     log.info("Approving join request: {} by reviewer: {}", id, reviewerId);
+
+    // Validate admin access to this join request
+    if (!authorizationService.canAccessJoinRequest(id)) {
+      throw new AccessDeniedException("You are not authorized to approve this join request");
+    }
+
     return ResponseEntity.ok(Response.ofSucceeded(joinRequestService.approveJoinRequest(id, reviewerId)));
   }
 
@@ -94,6 +116,12 @@ public class CompanyAdminController {
       @RequestParam Long reviewerId) {
 
     log.info("Rejecting join request: {} by reviewer: {}", id, reviewerId);
+
+    // Validate admin access to this join request
+    if (!authorizationService.canAccessJoinRequest(id)) {
+      throw new AccessDeniedException("You are not authorized to reject this join request");
+    }
+
     return ResponseEntity.ok(Response.ofSucceeded(joinRequestService.rejectJoinRequest(id, reviewerId)));
   }
 
@@ -101,6 +129,13 @@ public class CompanyAdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteJoinRequest(@PathVariable Long id) {
     log.info("Deleting join request: {}", id);
+
+    // Validate admin access to this join request
+    if (!authorizationService.canAccessJoinRequest(id)) {
+      throw new AccessDeniedException("You are not authorized to delete this join request");
+    }
+
+    joinRequestService.deleteJoinRequest(id);
     return ResponseEntity.noContent().build();
   }
 
@@ -117,6 +152,9 @@ public class CompanyAdminController {
 
     log.info("Getting team members for company: {}, page: {}, size: {}, role: {}, status: {}",
         companyId, page, size, role, status);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
 
     Pageable pageable = PageRequest.of(page, size);
     Page<CompanyMemberResponse> members;
@@ -138,7 +176,13 @@ public class CompanyAdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> getTeamMemberById(@PathVariable Long id) {
     log.info("Getting team member by id: {}", id);
-    return ResponseEntity.ok(memberService.getMemberById(id));
+
+    // Validate admin access to this team member
+    if (!authorizationService.canAccessTeamMember(id)) {
+      throw new AccessDeniedException("You are not authorized to access this team member");
+    }
+
+    return ResponseEntity.ok(Response.ofSucceeded(memberService.getMemberById(id)));
   }
 
   @PostMapping("/team-members")
@@ -149,6 +193,10 @@ public class CompanyAdminController {
       @RequestParam(defaultValue = "HR") String role) {
 
     log.info("Adding team member: {} to company: {} with role: {}", userId, companyId, role);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
+
     CompanyMember.MemberRole memberRole = CompanyMember.MemberRole.valueOf(role.toUpperCase());
     return ResponseEntity.ok(Response.ofSucceeded(memberService.addMember(userId, companyId, memberRole)));
   }
@@ -160,6 +208,12 @@ public class CompanyAdminController {
       @Valid @RequestBody CompanyMemberUpdateRequest request) {
 
     log.info("Updating team member: {}", id);
+
+    // Validate admin access to this team member
+    if (!authorizationService.canAccessTeamMember(id)) {
+      throw new AccessDeniedException("You are not authorized to update this team member");
+    }
+
     return ResponseEntity.ok(Response.ofSucceeded(memberService.updateMember(id, request)));
   }
 
@@ -171,6 +225,16 @@ public class CompanyAdminController {
       @RequestParam Long companyId) {
 
     log.info("Transferring admin rights from: {} to: {} for company: {}", currentAdminId, id, companyId);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
+
+    // Additional validation: ensure current user is the current admin
+    Long currentUserId = authorizationService.getCurrentUserId();
+    if (currentUserId == null || !currentUserId.equals(currentAdminId)) {
+      throw new AccessDeniedException("You can only transfer your own admin rights");
+    }
+
     return ResponseEntity.ok(Response.ofSucceeded(memberService.transferAdminRights(currentAdminId, id, companyId)));
   }
 
@@ -178,13 +242,25 @@ public class CompanyAdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> toggleMemberStatus(@PathVariable Long id) {
     log.info("Toggling status for team member: {}", id);
+
+    // Validate admin access to this team member
+    if (!authorizationService.canAccessTeamMember(id)) {
+      throw new AccessDeniedException("You are not authorized to modify this team member");
+    }
+
     return ResponseEntity.ok(Response.ofSucceeded(memberService.toggleMemberStatus(id)));
   }
 
   @DeleteMapping("/team-members/{id}")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<Void> removeTeamMember(@PathVariable Long id) {
+  public ResponseEntity<?> removeTeamMember(@PathVariable Long id) {
     log.info("Removing team member: {}", id);
+
+    // Validate admin access to this team member
+    if (!authorizationService.canAccessTeamMember(id)) {
+      throw new AccessDeniedException("You are not authorized to remove this team member");
+    }
+
     memberService.removeMember(id);
     return ResponseEntity.noContent().build();
   }
@@ -195,6 +271,9 @@ public class CompanyAdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> getCompanyAdminStats(@RequestParam Long companyId) {
     log.info("Getting company admin stats for company: {}", companyId);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
 
     TeamStatsResponse teamStats = memberService.getTeamStats(companyId);
     long pendingRequests = joinRequestService.countPendingRequestsByCompany(companyId);
@@ -212,6 +291,10 @@ public class CompanyAdminController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> getTeamStats(@RequestParam Long companyId) {
     log.info("Getting team stats for company: {}", companyId);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
+
     TeamStatsResponse stats = memberService.getTeamStats(companyId);
     long pendingRequests = joinRequestService.countPendingRequestsByCompany(companyId);
     stats.setPendingRequests(pendingRequests);
@@ -219,6 +302,22 @@ public class CompanyAdminController {
   }
 
   // =============== UTILITY ENDPOINTS ===============
+
+  @GetMapping("/my-companies")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> getMyManagedCompanies() {
+    Long currentUserId = authorizationService.getCurrentUserId();
+    if (currentUserId == null) {
+      throw new AccessDeniedException("Authentication required");
+    }
+
+    log.info("Getting companies managed by user: {}", currentUserId);
+
+    // Get companies where user is an active admin
+    List<CompanyMemberResponse> adminMemberships = memberService.getAdminMemberships(currentUserId);
+
+    return ResponseEntity.ok(Response.ofSucceeded(adminMemberships));
+  }
 
   @GetMapping("/check-membership")
   @PreAuthorize("hasRole('CANDIDATE') or hasRole('EMPLOYER') or hasRole('ADMIN')")

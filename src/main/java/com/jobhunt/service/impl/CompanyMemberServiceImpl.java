@@ -266,4 +266,17 @@ public class CompanyMemberServiceImpl implements CompanyMemberService {
   public long countMembersByRole(Long companyId, CompanyMember.MemberRole role) {
     return memberRepository.countByCompanyIdAndRole(companyId, role);
   }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CompanyMemberResponse> getAdminMemberships(Long userId) {
+    log.info("Getting admin memberships for user: {}", userId);
+
+    List<CompanyMember> adminMemberships = memberRepository.findByUserIdAndRoleAndStatus(
+        userId,
+        CompanyMember.MemberRole.ADMIN,
+        CompanyMember.MemberStatus.ACTIVE);
+
+    return mapper.toResponseList(adminMemberships);
+  }
 }
