@@ -36,7 +36,8 @@ public class SecurityConfig {
                                                                 "/api/v1/auth/refresh-token",
                                                                 "/api/v1/auth/logout",
                                                                 "/api/v1/auth/me",
-                                                                "/api/v1/auth/reset-password/**")
+                                                                "/api/v1/auth/reset-password/**",
+                                                                "/api/v1/admin/setup-company")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .oauth2ResourceServer(oauth2 -> oauth2

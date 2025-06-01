@@ -120,12 +120,12 @@ public class CompanyAdminSetupServiceImpl implements CompanyAdminSetupService {
 
     usersResource.get(userId).resetPassword(passwordCred);
 
-    // Assign EMPLOYER role
+    // Assign ADMIN role
     try {
-      var roleRepresentation = realmResource.roles().get("EMPLOYER").toRepresentation();
+      var roleRepresentation = realmResource.roles().get("ADMIN").toRepresentation();
       usersResource.get(userId).roles().realmLevel().add(List.of(roleRepresentation));
     } catch (Exception e) {
-      log.warn("Failed to assign EMPLOYER role in Keycloak: {}", e.getMessage());
+      log.warn("Failed to assign ADMIN role in Keycloak: {}", e.getMessage());
     }
 
     return userId;
@@ -139,7 +139,7 @@ public class CompanyAdminSetupServiceImpl implements CompanyAdminSetupService {
     adminUser.setLastName(request.getAdminLastName());
     adminUser.setPhoneNumber(request.getAdminPhoneNumber());
     adminUser.setKeycloakId(keycloakUserId);
-    adminUser.setRole(User.UserRole.EMPLOYER);
+    adminUser.setRole(User.UserRole.ADMIN);
     adminUser.setProfilePictureUrl(request.getAdminProfilePictureUrl());
 
     return userRepository.save(adminUser);
