@@ -11,7 +11,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -26,8 +27,10 @@ public class SecurityConfig {
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                        CookieAuthenticationFilter cookieAuthenticationFilter) throws Exception {
+                        CookieAuthenticationFilter cookieAuthenticationFilter,
+                        CorsConfigurationSource corsConfigurationSource) throws Exception {
                 http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**")
@@ -35,16 +38,17 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup",
                                                                 "/api/v1/auth/refresh-token",
                                                                 "/api/v1/auth/logout",
-                                                                "/api/v1/auth/me",
                                                                 "/api/v1/auth/reset-password/**",
-                                                                "/api/v1/admin/setup-company")
+                                                                "/api/v1/admin/setup-company",
+                                                                "api/v1/companies/**",
+                                                                "/api/v1/jobs/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .oauth2ResourceServer(oauth2 -> oauth2
                                                 .jwt(jwt -> jwt
                                                                 .jwtAuthenticationConverter(
                                                                                 jwtAuthenticationConverter())))
-                                .addFilterBefore(cookieAuthenticationFilter, BasicAuthenticationFilter.class);
+                                .addFilterBefore(cookieAuthenticationFilter, BearerTokenAuthenticationFilter.class);
 
                 return http.build();
         }

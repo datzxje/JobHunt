@@ -22,15 +22,32 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
-    // Skip filter for auth endpoints
     String requestURI = request.getRequestURI();
+    log.debug("Processing request: {} {}", request.getMethod(), requestURI);
+
+    // Skip filter for auth endpoints
     if (requestURI.contains("/api/v1/auth/login") ||
         requestURI.contains("/api/v1/auth/signup") ||
         requestURI.contains("/api/v1/auth/refresh-token") ||
-        requestURI.contains("/api/v1/auth/logout") ||
-        requestURI.contains("/api/v1/auth/me")) {
+        requestURI.contains("/api/v1/auth/logout")) {
+      log.debug("Skipping cookie filter for auth endpoint: {}", requestURI);
       filterChain.doFilter(request, response);
       return;
+    }
+
+    // Log all cookies for debugging
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      log.debug("Request has {} cookies", cookies.length);
+      for (Cookie cookie : cookies) {
+        log.debug("Cookie: {} = {} (domain: {}, path: {})",
+            cookie.getName(),
+            cookie.getValue().length() > 10 ? cookie.getValue().substring(0, 10) + "..." : cookie.getValue(),
+            cookie.getDomain(),
+            cookie.getPath());
+      }
+    } else {
+      log.debug("No cookies found in request");
     }
 
     // Extract access token from cookie
@@ -42,6 +59,8 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
       HttpServletRequest wrappedRequest = new AuthorizationHeaderWrapper(request, "Bearer " + accessToken.get());
       filterChain.doFilter(wrappedRequest, response);
       return;
+    } else {
+      log.debug("No access token found in cookies for request: {}", requestURI);
     }
 
     filterChain.doFilter(request, response);
@@ -50,13 +69,22 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
   private Optional<String> extractTokenFromCookie(HttpServletRequest request, String cookieName) {
     Cookie[] cookies = request.getCookies();
     if (cookies == null) {
+      log.debug("No cookies array found in request");
       return Optional.empty();
     }
 
-    return Arrays.stream(cookies)
+    Optional<String> tokenValue = Arrays.stream(cookies)
         .filter(cookie -> cookieName.equals(cookie.getName()))
         .map(Cookie::getValue)
         .findFirst();
+
+    if (tokenValue.isPresent()) {
+      log.debug("Found cookie '{}' with value length: {}", cookieName, tokenValue.get().length());
+    } else {
+      log.debug("Cookie '{}' not found", cookieName);
+    }
+
+    return tokenValue;
   }
 
   // Wrapper to override the getHeader() method

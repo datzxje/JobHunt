@@ -53,10 +53,21 @@ cloudflare:
 
 app:
   cookie:
-    domain: localhost
+    domain: # Leave empty for localhost development
     secure: false
     httpOnly: true
     accessToken:
       expiration: 3600
     refreshToken:
       expiration: 86400
+
+# Debug logging
+logging:
+  level:
+    com.jobhunt.config.CookieAuthenticationFilter: DEBUG
+    com.jobhunt.service.impl.AuthServiceImpl: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.cors: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.security.oauth2.jwt: DEBUG
+    org.springframework.security.oauth2.server.resource: DEBUG

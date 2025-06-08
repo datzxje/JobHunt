@@ -342,7 +342,6 @@ public class AuthServiceImpl implements AuthService {
 
       log.debug("Token request data: client_id={}, grant_type=refresh_token", clientId);
 
-      // Set up connection
       java.net.URL url = new java.net.URL(tokenUrl);
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod("POST");
@@ -380,7 +379,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         throw new BadRequestException("Failed to refresh token: " + connection.getResponseMessage() +
-            (errorResponse.length() > 0 ? " - Details: " + errorResponse : ""));
+            (!errorResponse.isEmpty() ? " - Details: " + errorResponse : ""));
       }
 
       // Parse JSON response
@@ -574,8 +573,10 @@ public class AuthServiceImpl implements AuthService {
     Cookie accessTokenCookie = new Cookie("access_token", accessToken);
     accessTokenCookie.setHttpOnly(httpOnlyCookie);
     accessTokenCookie.setSecure(secureCookie);
-    accessTokenCookie.setPath("/");
-    accessTokenCookie.setDomain(cookieDomain);
+    accessTokenCookie.setPath("/profile/"); // Match context path
+    if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+      accessTokenCookie.setDomain(cookieDomain);
+    }
     accessTokenCookie.setMaxAge(accessTokenExpiration);
     response.addCookie(accessTokenCookie);
     log.debug("Set access_token cookie with expiration: {} seconds", accessTokenExpiration);
@@ -584,8 +585,10 @@ public class AuthServiceImpl implements AuthService {
     Cookie refreshTokenCookie = new Cookie("refresh_token", refreshToken);
     refreshTokenCookie.setHttpOnly(httpOnlyCookie);
     refreshTokenCookie.setSecure(secureCookie);
-    refreshTokenCookie.setPath("/");
-    refreshTokenCookie.setDomain(cookieDomain);
+    refreshTokenCookie.setPath("/profile/"); // Match context path
+    if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+      refreshTokenCookie.setDomain(cookieDomain);
+    }
     refreshTokenCookie.setMaxAge(refreshTokenExpiration);
     response.addCookie(refreshTokenCookie);
     log.debug("Set refresh_token cookie with expiration: {} seconds", refreshTokenExpiration);
@@ -598,8 +601,10 @@ public class AuthServiceImpl implements AuthService {
     Cookie accessTokenCookie = new Cookie("access_token", "");
     accessTokenCookie.setHttpOnly(httpOnlyCookie);
     accessTokenCookie.setSecure(secureCookie);
-    accessTokenCookie.setPath("/");
-    accessTokenCookie.setDomain(cookieDomain);
+    accessTokenCookie.setPath("/profile/"); // Match context path
+    if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+      accessTokenCookie.setDomain(cookieDomain);
+    }
     accessTokenCookie.setMaxAge(0);
     response.addCookie(accessTokenCookie);
 
@@ -607,8 +612,10 @@ public class AuthServiceImpl implements AuthService {
     Cookie refreshTokenCookie = new Cookie("refresh_token", "");
     refreshTokenCookie.setHttpOnly(httpOnlyCookie);
     refreshTokenCookie.setSecure(secureCookie);
-    refreshTokenCookie.setPath("/");
-    refreshTokenCookie.setDomain(cookieDomain);
+    refreshTokenCookie.setPath("/profile/"); // Match context path
+    if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+      refreshTokenCookie.setDomain(cookieDomain);
+    }
     refreshTokenCookie.setMaxAge(0);
     response.addCookie(refreshTokenCookie);
   }
