@@ -1,6 +1,7 @@
 package com.jobhunt.model.request;
 
 import com.jobhunt.model.entity.Job.EmploymentType;
+import com.jobhunt.model.entity.Job.GenderPreference;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,6 +10,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 public class JobRequest {
@@ -33,11 +35,41 @@ public class JobRequest {
   @NotBlank(message = "Experience level must not be empty")
   private String experienceLevel;
 
+  private String careerLevel;
+
   @NotBlank(message = "Location must not be empty")
   private String location;
+
+  private String country;
+
+  private String city;
+
+  private String address;
 
   private boolean isRemote;
 
   @Future(message = "Application deadline must be in the future")
   private LocalDateTime applicationDeadline;
+
+  // New fields from frontend form
+  private String hoursPerWeek;
+
+  private GenderPreference genderPreference;
+
+  private String minimumQualification;
+
+  private Integer minimumAge;
+
+  private Integer maximumAge;
+
+  private Integer minimumExperienceYears;
+
+  private Integer maximumExperienceYears;
+
+  // Relationship IDs
+  private Set<Long> categoryIds;
+
+  private Set<Long> skillIds;
+
+  private Set<Long> languageIds;
 }

@@ -41,8 +41,20 @@ public class Job {
   @Column(name = "experience_level")
   private String experienceLevel;
 
+  @Column(name = "career_level")
+  private String careerLevel;
+
   @Column(nullable = false)
   private String location;
+
+  @Column
+  private String country;
+
+  @Column
+  private String city;
+
+  @Column
+  private String address;
 
   @Column(name = "is_remote")
   private boolean isRemote;
@@ -50,9 +62,33 @@ public class Job {
   @Column(name = "application_deadline")
   private LocalDateTime applicationDeadline;
 
+  // New fields from frontend form
+  @Column(name = "hours_per_week")
+  private String hoursPerWeek;
+
+  @Column(name = "gender_preference")
+  @Enumerated(EnumType.STRING)
+  private GenderPreference genderPreference;
+
+  @Column(name = "minimum_qualification")
+  private String minimumQualification;
+
+  @Column(name = "minimum_age")
+  private Integer minimumAge;
+
+  @Column(name = "maximum_age")
+  private Integer maximumAge;
+
+  @Column(name = "minimum_experience_years")
+  private Integer minimumExperienceYears;
+
+  @Column(name = "maximum_experience_years")
+  private Integer maximumExperienceYears;
+
   @Column(nullable = false)
   private boolean active = true;
 
+  // Relationships
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "company_id", nullable = false)
   private Company company;
@@ -64,6 +100,26 @@ public class Job {
   @OneToMany(mappedBy = "job", cascade = CascadeType.ALL)
   private Set<Application> applications = new HashSet<>();
 
+  @OneToMany(mappedBy = "job")
+  private Set<SavedJob> savedByUsers = new HashSet<>();
+
+  // Many-to-Many relationships
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name = "job_categories_mapping", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "category_id"))
+  private Set<JobCategory> categories = new HashSet<>();
+
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name = "job_skills_mapping", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))
+  private Set<Skill> requiredSkills = new HashSet<>();
+
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name = "job_languages_mapping", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "language_id"))
+  private Set<Language> requiredLanguages = new HashSet<>();
+
+  // Job Requirements for ranking/filtering
+  @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
+  private Set<JobRequirement> jobRequirements = new HashSet<>();
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -72,14 +128,19 @@ public class Job {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @OneToMany(mappedBy = "job")
-  private Set<SavedJob> savedByUsers = new HashSet<>();
-
   public enum EmploymentType {
     FULL_TIME,
     PART_TIME,
     CONTRACT,
     INTERNSHIP,
-    TEMPORARY
+    TEMPORARY,
+    FREELANCER
+  }
+
+  public enum GenderPreference {
+    NO_PREFERENCE,
+    MALE,
+    FEMALE,
+    OTHER
   }
 }

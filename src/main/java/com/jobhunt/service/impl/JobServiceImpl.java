@@ -3,6 +3,7 @@ package com.jobhunt.service.impl;
 import com.jobhunt.exception.BadRequestException;
 import com.jobhunt.exception.ResourceNotFoundException;
 import com.jobhunt.mapper.JobMapper;
+import com.jobhunt.mapper.JobMapperContext;
 import com.jobhunt.model.entity.Application;
 import com.jobhunt.model.entity.Application.ApplicationStatus;
 import com.jobhunt.model.entity.Company;
@@ -37,6 +38,7 @@ public class JobServiceImpl implements JobService {
   private final ApplicationRepository applicationRepository;
   private final JobMapper jobMapper;
   private final SavedJobRepository savedJobRepository;
+  private final JobMapperContext jobMapperContext;
 
   @Override
   @Transactional
@@ -51,6 +53,20 @@ public class JobServiceImpl implements JobService {
 
     Job job = jobMapper.toEntity(request);
     job.setCompany(company);
+    job.setPostedBy(user);
+
+    // Set relationships using IDs from request
+    if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
+      job.setCategories(jobMapperContext.getCategoriesByIds(request.getCategoryIds()));
+    }
+
+    if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
+      job.setRequiredSkills(jobMapperContext.getSkillsByIds(request.getSkillIds()));
+    }
+
+    if (request.getLanguageIds() != null && !request.getLanguageIds().isEmpty()) {
+      job.setRequiredLanguages(jobMapperContext.getLanguagesByIds(request.getLanguageIds()));
+    }
 
     return jobMapper.toResponse(jobRepository.save(job));
   }
@@ -71,6 +87,20 @@ public class JobServiceImpl implements JobService {
     }
 
     jobMapper.updateJobFromDto(request, job);
+
+    // Update relationships
+    if (request.getCategoryIds() != null) {
+      job.setCategories(jobMapperContext.getCategoriesByIds(request.getCategoryIds()));
+    }
+
+    if (request.getSkillIds() != null) {
+      job.setRequiredSkills(jobMapperContext.getSkillsByIds(request.getSkillIds()));
+    }
+
+    if (request.getLanguageIds() != null) {
+      job.setRequiredLanguages(jobMapperContext.getLanguagesByIds(request.getLanguageIds()));
+    }
+
     return jobMapper.toResponse(jobRepository.save(job));
   }
 

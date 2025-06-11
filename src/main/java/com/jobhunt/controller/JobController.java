@@ -3,6 +3,9 @@ package com.jobhunt.controller;
 import com.jobhunt.model.request.JobRequest;
 import com.jobhunt.payload.Response;
 import com.jobhunt.service.JobService;
+import com.jobhunt.service.SkillService;
+import com.jobhunt.service.JobCategoryService;
+import com.jobhunt.service.LanguageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,9 @@ import org.springframework.web.bind.annotation.*;
 public class JobController {
 
   private final JobService jobService;
+  private final SkillService skillService;
+  private final JobCategoryService jobCategoryService;
+  private final LanguageService languageService;
 
   @PostMapping
   @PreAuthorize("hasRole('EMPLOYER')")
@@ -46,6 +52,19 @@ public class JobController {
   }
 
   @GetMapping
+  public ResponseEntity<?> getAllJobs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) String location,
+      @RequestParam(required = false) String jobType,
+      @RequestParam(required = false) String experienceLevel,
+      @RequestParam(required = false) String salaryRange) {
+    return ResponseEntity.ok(Response.ofSucceeded(
+        jobService.getAllJobs(page, size, keyword, location, jobType, experienceLevel, salaryRange)));
+  }
+
+  @GetMapping("/search")
   public ResponseEntity<?> searchJobs(
       @RequestParam(required = false) String keyword,
       @RequestParam(required = false) String location,
@@ -54,6 +73,12 @@ public class JobController {
       @RequestParam(required = false) Boolean isRemote) {
     return ResponseEntity.ok(Response.ofSucceeded(
         jobService.searchJobs(keyword, location, employmentType, experienceLevel, isRemote)));
+  }
+
+  @PostMapping("/{id}/apply")
+  @PreAuthorize("hasRole('CANDIDATE')")
+  public ResponseEntity<?> applyJob(@PathVariable Long id) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.applyJob(id)));
   }
 
   @GetMapping("/applied")
@@ -83,5 +108,21 @@ public class JobController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.getSavedJobs(page, size)));
+  }
+
+  // Endpoints for form data
+  @GetMapping("/form-data/skills")
+  public ResponseEntity<?> getAllSkills() {
+    return ResponseEntity.ok(Response.ofSucceeded(skillService.getAllActiveSkills()));
+  }
+
+  @GetMapping("/form-data/categories")
+  public ResponseEntity<?> getAllCategories() {
+    return ResponseEntity.ok(Response.ofSucceeded(jobCategoryService.getAllActiveCategories()));
+  }
+
+  @GetMapping("/form-data/languages")
+  public ResponseEntity<?> getAllLanguages() {
+    return ResponseEntity.ok(Response.ofSucceeded(languageService.getAllActiveLanguages()));
   }
 }
