@@ -10,7 +10,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 
 @Data
 public class JobRequest {
@@ -66,10 +66,12 @@ public class JobRequest {
 
   private Integer maximumExperienceYears;
 
-  // Relationship IDs
-  private Set<Long> categoryIds;
+  // JSON string fields for names instead of IDs
+  private List<String> categories; // ["Technology", "Software Development"]
 
-  private Set<Long> skillIds;
+  private List<String> requiredSkills; // ["Java", "Spring Boot", "React"]
 
-  private Set<Long> languageIds;
+  private List<String> requiredLanguages; // ["English", "Vietnamese"]
+
+  private String jobRequirements; // JSON string of requirements array
 }

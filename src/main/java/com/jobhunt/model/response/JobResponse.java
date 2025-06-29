@@ -3,13 +3,15 @@ package com.jobhunt.model.response;
 import com.jobhunt.model.entity.Job.EmploymentType;
 import com.jobhunt.model.entity.Job.GenderPreference;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Set;
 
-@Data
+@Getter
+@Setter
 public class JobResponse {
   private Long id;
   private String title;
@@ -34,14 +36,15 @@ public class JobResponse {
   private Integer minimumExperienceYears;
   private Integer maximumExperienceYears;
   private boolean active;
-  private CompanyResponse company;
   private Instant createdAt;
   private Instant updatedAt;
   private long numberOfApplications;
 
-  // Relationship data
-  private Set<JobCategoryResponse> categories;
-  private Set<SkillResponse> requiredSkills;
-  private Set<LanguageResponse> requiredLanguages;
-  private Set<JobRequirementResponse> jobRequirements;
+  private String categories;
+  private String requiredSkills;
+  private String requiredLanguages;
+  private String jobRequirements;
+
+  // Company information
+  private CompanyBasicResponse company;
 }

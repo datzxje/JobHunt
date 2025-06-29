@@ -16,4 +16,7 @@ public class ApplicationRequest {
   @NotNull(message = "Expected salary is required")
   @Positive(message = "Expected salary must be positive")
   private Double expectedSalary;
+
+  @NotBlank(message = "Candidate profile is required")
+  private String candidateProfile; // JSON string containing all candidate requirements data
 }

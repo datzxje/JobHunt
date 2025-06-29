@@ -1,9 +1,10 @@
 package com.jobhunt.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobhunt.exception.BadRequestException;
 import com.jobhunt.exception.ResourceNotFoundException;
 import com.jobhunt.mapper.JobMapper;
-import com.jobhunt.mapper.JobMapperContext;
+import com.jobhunt.mapper.CompanyBasicMapper;
 import com.jobhunt.model.entity.Application;
 import com.jobhunt.model.entity.Application.ApplicationStatus;
 import com.jobhunt.model.entity.Company;
@@ -18,7 +19,9 @@ import com.jobhunt.repository.JobRepository;
 import com.jobhunt.repository.UserRepository;
 import com.jobhunt.repository.SavedJobRepository;
 import com.jobhunt.service.JobService;
+import com.jobhunt.specification.JobSpecification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobServiceImpl implements JobService {
@@ -38,16 +42,15 @@ public class JobServiceImpl implements JobService {
   private final ApplicationRepository applicationRepository;
   private final JobMapper jobMapper;
   private final SavedJobRepository savedJobRepository;
-  private final JobMapperContext jobMapperContext;
+  private final ObjectMapper objectMapper;
+  private final CompanyBasicMapper companyBasicMapper;
 
   @Override
   @Transactional
   public JobResponse createJob(JobRequest request) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.info("Creating new job with title: {}", request.getTitle());
 
-    var user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
+    User user = getCurrentUser();
     Company company = companyRepository.findByUserIdAndActiveTrue(user.getId())
         .orElseThrow(() -> new ResourceNotFoundException("Company not found for current user"));
 
@@ -55,98 +58,69 @@ public class JobServiceImpl implements JobService {
     job.setCompany(company);
     job.setPostedBy(user);
 
-    // Set relationships using IDs from request
-    if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
-      job.setCategories(jobMapperContext.getCategoriesByIds(request.getCategoryIds()));
-    }
+    processJobJsonFields(job, request);
 
-    if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-      job.setRequiredSkills(jobMapperContext.getSkillsByIds(request.getSkillIds()));
-    }
+    Job savedJob = jobRepository.save(job);
+    log.info("Successfully created job with ID: {}", savedJob.getId());
 
-    if (request.getLanguageIds() != null && !request.getLanguageIds().isEmpty()) {
-      job.setRequiredLanguages(jobMapperContext.getLanguagesByIds(request.getLanguageIds()));
-    }
-
-    return jobMapper.toResponse(jobRepository.save(job));
+    return toJobResponseWithApplicationCount(savedJob);
   }
 
   @Override
   @Transactional
   public JobResponse updateJob(Long id, JobRequest request) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.info("Updating job with ID: {}", id);
 
-    Job job = jobRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
-
-    var user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    if (!job.getCompany().getUser().getId().equals(user.getId())) {
-      throw new BadRequestException("You don't have permission to update this job");
-    }
+    User user = getCurrentUser();
+    Job job = findJobById(id);
+    validateJobOwnership(job, user);
 
     jobMapper.updateJobFromDto(request, job);
+    processJobJsonFields(job, request);
 
-    // Update relationships
-    if (request.getCategoryIds() != null) {
-      job.setCategories(jobMapperContext.getCategoriesByIds(request.getCategoryIds()));
-    }
+    Job updatedJob = jobRepository.save(job);
+    log.info("Successfully updated job with ID: {}", id);
 
-    if (request.getSkillIds() != null) {
-      job.setRequiredSkills(jobMapperContext.getSkillsByIds(request.getSkillIds()));
-    }
-
-    if (request.getLanguageIds() != null) {
-      job.setRequiredLanguages(jobMapperContext.getLanguagesByIds(request.getLanguageIds()));
-    }
-
-    return jobMapper.toResponse(jobRepository.save(job));
+    return toJobResponseWithApplicationCount(updatedJob);
   }
 
   @Override
   @Transactional
   public void deleteJob(Long id) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.info("Soft deleting job with ID: {}", id);
 
-    Job job = jobRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
-
-    var user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    if (!job.getCompany().getUser().getId().equals(user.getId())) {
-      throw new BadRequestException("You don't have permission to delete this job");
-    }
+    User user = getCurrentUser();
+    Job job = findJobById(id);
+    validateJobOwnership(job, user);
 
     job.setActive(false);
     jobRepository.save(job);
+
+    log.info("Successfully soft deleted job with ID: {}", id);
   }
 
   @Override
   public JobResponse getJob(Long id) {
-    return jobRepository.findById(id)
-        .map(jobMapper::toResponse)
-        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    log.debug("Fetching job with ID: {}", id);
+    Job job = findJobById(id);
+    return toJobResponseWithApplicationCount(job);
   }
 
   @Override
-  public Page<JobResponse> getAllJobs(int page, int size, String keyword, String location, String jobType,
-      String experienceLevel, String salaryRange) {
+  public Page<JobResponse> getAllJobs(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
-    return jobRepository.findAll(pageable).map(jobMapper::toResponse);
+
+    return jobRepository.findByActiveTrueOrderByCreatedAtDesc(pageable)
+        .map(this::toJobResponseWithApplicationCount);
   }
 
   @Override
   @Transactional
   public JobResponse applyJob(Long id) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.info("User applying for job with ID: {}", id);
 
-    User user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    Job job = jobRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    User user = getCurrentUser();
+    Job job = findJobById(id);
 
     if (applicationRepository.existsByUserAndJob(user, job)) {
       throw new BadRequestException("You have already applied for this job");
@@ -158,48 +132,57 @@ public class JobServiceImpl implements JobService {
     application.setStatus(ApplicationStatus.PENDING);
     applicationRepository.save(application);
 
-    return jobMapper.toResponse(job);
+    log.info("User {} successfully applied for job {}", user.getId(), id);
+    return toJobResponseWithApplicationCount(job);
   }
 
   @Override
   public Page<JobResponse> getAppliedJobs(int page, int size) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.debug("Fetching applied jobs for user, page: {}, size: {}", page, size);
 
-    User user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    User user = getCurrentUser();
+    Pageable pageable = PageRequest.of(page, size);
+
+    return jobRepository.findByApplicationsUser(user, pageable)
+        .map(this::toJobResponseWithApplicationCount);
+  }
+
+  @Override
+  public Page<JobResponse> getCompanyJobs(int page, int size, Long companyId) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    return jobRepository.findByCompanyIdAndActiveTrue(companyId, pageable)
+        .map(this::toJobResponseWithApplicationCount);
+  }
+
+  @Override
+  public Page<JobResponse> searchJobs(int page, int size, String keyword, String location, String employmentType,
+      String experienceLevel, Boolean isRemote, String city, String category, String skill,
+      Double minSalary, Double maxSalary) {
+    log.debug(
+        "Searching jobs with keyword: {}, location: {}, employmentType: {}, experienceLevel: {}, isRemote: {}, city: {}, category: {}, skill: {}, minSalary: {}, maxSalary: {}",
+        keyword, location, employmentType, experienceLevel, isRemote, city, category, skill, minSalary, maxSalary);
 
     Pageable pageable = PageRequest.of(page, size);
-    return jobRepository.findByApplicationsUser(user, pageable)
-        .map(jobMapper::toResponse);
-  }
 
-  @Override
-  public List<JobResponse> getCompanyJobs(Long companyId) {
-    return jobRepository.findByCompanyIdAndActiveTrue(companyId)
-        .stream()
-        .map(jobMapper::toResponse)
-        .toList();
-  }
+    // Convert Double to BigDecimal for database query
+    java.math.BigDecimal minSalaryBD = minSalary != null ? java.math.BigDecimal.valueOf(minSalary) : null;
+    java.math.BigDecimal maxSalaryBD = maxSalary != null ? java.math.BigDecimal.valueOf(maxSalary) : null;
 
-  @Override
-  public List<JobResponse> searchJobs(String keyword, String location, String employmentType,
-      String experienceLevel, Boolean isRemote) {
-    return jobRepository.searchJobs(keyword, location, employmentType, experienceLevel, isRemote)
-        .stream()
-        .map(jobMapper::toResponse)
-        .toList();
+    return jobRepository.findAll(
+        JobSpecification.buildSearchSpecification(keyword, location, employmentType, experienceLevel, isRemote, city,
+            category, skill, minSalaryBD, maxSalaryBD),
+        pageable)
+        .map(this::toJobResponseWithApplicationCount);
   }
 
   @Override
   @Transactional
   public JobResponse saveJob(Long id) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.info("User saving job with ID: {}", id);
 
-    User user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    Job job = jobRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    User user = getCurrentUser();
+    Job job = findJobById(id);
 
     if (savedJobRepository.existsByUserAndJob(user, job)) {
       throw new BadRequestException("You have already saved this job");
@@ -210,32 +193,112 @@ public class JobServiceImpl implements JobService {
     savedJob.setJob(job);
     savedJobRepository.save(savedJob);
 
-    return jobMapper.toResponse(job);
+    log.info("User {} successfully saved job {}", user.getId(), id);
+    return toJobResponseWithApplicationCount(job);
   }
 
   @Override
   @Transactional
   public void unsaveJob(Long id) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.info("User unsaving job with ID: {}", id);
 
-    User user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    Job job = jobRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    User user = getCurrentUser();
+    Job job = findJobById(id);
 
     savedJobRepository.deleteByUserAndJob(user, job);
+
+    log.info("User {} successfully unsaved job {}", user.getId(), id);
   }
 
   @Override
   public Page<JobResponse> getSavedJobs(int page, int size) {
-    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    log.debug("Fetching saved jobs for user, page: {}, size: {}", page, size);
 
-    User user = userRepository.findByKeycloakId(currentUserId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
+    User user = getCurrentUser();
     Pageable pageable = PageRequest.of(page, size);
+
     return savedJobRepository.findByUser(user, pageable)
-        .map(savedJob -> jobMapper.toResponse(savedJob.getJob()));
+        .map(savedJob -> toJobResponseWithApplicationCount(savedJob.getJob()));
+  }
+
+  // Utility methods
+  private User getCurrentUser() {
+    String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+    return userRepository.findByKeycloakId(currentUserId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+  }
+
+  private Job findJobById(Long id) {
+    return jobRepository.findByIdWithCompany(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+  }
+
+  private void validateJobOwnership(Job job, User user) {
+    if (!job.getCompany().getUser().getId().equals(user.getId())) {
+      throw new BadRequestException("You don't have permission to access this job");
+    }
+  }
+
+  private void processJobJsonFields(Job job, JobRequest request) {
+    try {
+      // Categories
+      if (request.getCategories() != null) {
+        if (!request.getCategories().isEmpty()) {
+          job.setCategories(objectMapper.writeValueAsString(request.getCategories()));
+          log.debug("Set categories: {}", request.getCategories());
+        } else {
+          job.setCategories(null);
+        }
+      }
+
+      // Required Skills
+      if (request.getRequiredSkills() != null) {
+        if (!request.getRequiredSkills().isEmpty()) {
+          job.setRequiredSkills(objectMapper.writeValueAsString(request.getRequiredSkills()));
+          log.debug("Set required skills: {}", request.getRequiredSkills());
+        } else {
+          job.setRequiredSkills(null);
+        }
+      }
+
+      // Required Languages
+      if (request.getRequiredLanguages() != null) {
+        if (!request.getRequiredLanguages().isEmpty()) {
+          job.setRequiredLanguages(objectMapper.writeValueAsString(request.getRequiredLanguages()));
+          log.debug("Set required languages: {}", request.getRequiredLanguages());
+        } else {
+          job.setRequiredLanguages(null);
+        }
+      }
+
+      // Job Requirements
+      if (request.getJobRequirements() != null) {
+        if (!request.getJobRequirements().trim().isEmpty()) {
+          // Validate JSON format
+          objectMapper.readTree(request.getJobRequirements());
+          job.setJobRequirements(request.getJobRequirements());
+          log.debug("Set job requirements JSON");
+        } else {
+          job.setJobRequirements(null);
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error processing job JSON fields: {}", e.getMessage());
+      throw new BadRequestException("Error processing job data: " + e.getMessage());
+    }
+  }
+
+  private JobResponse toJobResponseWithApplicationCount(Job job) {
+    JobResponse response = jobMapper.toResponse(job);
+    long applicationCount = applicationRepository.countByJobId(job.getId());
+    response.setNumberOfApplications(applicationCount);
+
+    // Set activeJobsCount for company if company exists
+    if (response.getCompany() != null && job.getCompany() != null) {
+      Long activeJobsCount = jobRepository.countActiveJobsByCompanyId(job.getCompany().getId());
+      response.getCompany().setActiveJobsCount(activeJobsCount);
+    }
+
+    return response;
   }
 }

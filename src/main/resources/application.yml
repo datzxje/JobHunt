@@ -8,7 +8,7 @@ spring:
     database: POSTGRESQL
     show-sql: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
   datasource:
     url: jdbc:postgresql://localhost:5432/jobhunt
     username: jobhunt

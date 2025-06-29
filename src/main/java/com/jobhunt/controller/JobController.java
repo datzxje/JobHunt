@@ -23,19 +23,19 @@ public class JobController {
   private final LanguageService languageService;
 
   @PostMapping
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.createJob(request)));
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateJob(@PathVariable Long id, @Valid @RequestBody JobRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.updateJob(id, request)));
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteJob(@PathVariable Long id) {
     jobService.deleteJob(id);
     return ResponseEntity.ok(Response.ofSucceeded());
@@ -47,21 +47,18 @@ public class JobController {
   }
 
   @GetMapping("/company/{companyId}")
-  public ResponseEntity<?> getCompanyJobs(@PathVariable Long companyId) {
-    return ResponseEntity.ok(Response.ofSucceeded(jobService.getCompanyJobs(companyId)));
+  public ResponseEntity<?> getCompanyJobs(@PathVariable Long companyId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getCompanyJobs(page, size, companyId)));
   }
 
   @GetMapping
   public ResponseEntity<?> getAllJobs(
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(required = false) String keyword,
-      @RequestParam(required = false) String location,
-      @RequestParam(required = false) String jobType,
-      @RequestParam(required = false) String experienceLevel,
-      @RequestParam(required = false) String salaryRange) {
+      @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(
-        jobService.getAllJobs(page, size, keyword, location, jobType, experienceLevel, salaryRange)));
+        jobService.getAllJobs(page, size)));
   }
 
   @GetMapping("/search")
@@ -70,9 +67,17 @@ public class JobController {
       @RequestParam(required = false) String location,
       @RequestParam(required = false) String employmentType,
       @RequestParam(required = false) String experienceLevel,
-      @RequestParam(required = false) Boolean isRemote) {
+      @RequestParam(required = false) Boolean isRemote,
+      @RequestParam(required = false) String city,
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) String skill,
+      @RequestParam(required = false) Double minSalary,
+      @RequestParam(required = false) Double maxSalary,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(
-        jobService.searchJobs(keyword, location, employmentType, experienceLevel, isRemote)));
+        jobService.searchJobs(page, size, keyword, location, employmentType, experienceLevel, isRemote, city, category,
+            skill, minSalary, maxSalary)));
   }
 
   @PostMapping("/{id}/apply")

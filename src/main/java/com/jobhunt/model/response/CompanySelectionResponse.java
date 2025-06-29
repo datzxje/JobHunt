@@ -1,10 +1,9 @@
 package com.jobhunt.model.response;
 
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class CompanySelectionResponse {

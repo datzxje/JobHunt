@@ -16,20 +16,6 @@ public class CompanyController {
 
   private final CompanyService companyService;
 
-  // Removed: Admin cannot create new companies
-  // Companies should be added directly to database
-  /*
-   * @PostMapping
-   * 
-   * @PreAuthorize("hasRole('EMPLOYER')")
-   * public ResponseEntity<?> createCompany(@Valid @RequestBody CompanyRequest
-   * request) {
-   * return
-   * ResponseEntity.ok(Response.ofSucceeded(companyService.createCompany(request))
-   * );
-   * }
-   */
-
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('EMPLOYER')")
   public ResponseEntity<?> updateCompany(@PathVariable Long id,
@@ -50,7 +36,7 @@ public class CompanyController {
   }
 
   @GetMapping
-  public ResponseEntity<?> getAllUsers(
+  public ResponseEntity<?> getAllCompanies(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.getAllCompanies(page, size)));

@@ -1,5 +1,6 @@
 package com.jobhunt.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobhunt.exception.BadRequestException;
 import com.jobhunt.exception.ResourceNotFoundException;
 import com.jobhunt.model.entity.Application;
@@ -14,12 +15,16 @@ import com.jobhunt.service.ApplicationService;
 import com.jobhunt.service.AuthService;
 import com.jobhunt.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {
@@ -29,6 +34,7 @@ public class ApplicationServiceImpl implements ApplicationService {
   private final JobRepository jobRepository;
   private final UserRepository userRepository;
   private final FileStorageService fileStorageService;
+  private final ObjectMapper objectMapper;
 
   @Override
   @Transactional
@@ -141,6 +147,131 @@ public class ApplicationServiceImpl implements ApplicationService {
     application.setCoverLetter(request.getCoverLetter());
     application.setExpectedSalary(request.getExpectedSalary());
 
+    return applicationRepository.save(application);
+  }
+
+  @Override
+  @Transactional
+  public Application createApplication(Long userId, ApplicationRequest request) {
+    // Validate JSON format of candidate profile
+    try {
+      objectMapper.readTree(request.getCandidateProfile());
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Invalid candidate profile JSON format");
+    }
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    Job job = jobRepository.findById(request.getJobId())
+        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+
+    // Check if user has already applied
+    if (applicationRepository.existsByUserAndJob(user, job)) {
+      throw new IllegalStateException("You have already applied for this job");
+    }
+
+    Application application = Application.builder()
+        .user(user)
+        .job(job)
+        .coverLetter(request.getCoverLetter())
+        .expectedSalary(request.getExpectedSalary())
+        .candidateProfile(request.getCandidateProfile())
+        .status(Application.ApplicationStatus.PENDING)
+        .build();
+
+    return applicationRepository.save(application);
+  }
+
+  @Override
+  @Transactional
+  public Application createApplication(Long userId, Long jobId, String coverLetter, Double expectedSalary,
+      String candidateProfile, MultipartFile cv) {
+    // Validate JSON format of candidate profile
+    try {
+      objectMapper.readTree(candidateProfile);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Invalid candidate profile JSON format");
+    }
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    Job job = jobRepository.findById(jobId)
+        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+
+    // Check if user has already applied
+    if (applicationRepository.existsByUserAndJob(user, job)) {
+      throw new IllegalStateException("You have already applied for this job");
+    }
+
+    // Upload CV to S3
+    String cvUrl = fileStorageService.uploadFile(cv, "cv");
+
+    Application application = Application.builder()
+        .user(user)
+        .job(job)
+        .coverLetter(coverLetter)
+        .expectedSalary(expectedSalary)
+        .candidateProfile(candidateProfile)
+        .cvUrl(cvUrl)
+        .status(Application.ApplicationStatus.PENDING)
+        .build();
+
+    return applicationRepository.save(application);
+  }
+
+  @Override
+  public Page<Application> getApplicationsByJobId(Long jobId, Pageable pageable) {
+    Job job = jobRepository.findById(jobId)
+        .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+    return applicationRepository.findByJob(job, pageable);
+  }
+
+  @Override
+  public Page<Application> getApplicationsByUserId(Long userId, Pageable pageable) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    return applicationRepository.findByUser(user, pageable);
+  }
+
+  @Override
+  @Transactional
+  public Application updateApplicationStatus(Long applicationId, Application.ApplicationStatus status) {
+    Application application = applicationRepository.findById(applicationId)
+        .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    application.setStatus(status);
+    return applicationRepository.save(application);
+  }
+
+  @Override
+  @Transactional
+  public Application updateApplicationStatus(Long applicationId, Application.ApplicationStatus status,
+      String rejectionReason) {
+    Application application = applicationRepository.findById(applicationId)
+        .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    application.setStatus(status);
+    application.setRejectionReason(rejectionReason);
+    return applicationRepository.save(application);
+  }
+
+  @Override
+  @Transactional
+  public Application scheduleInterview(Long applicationId, LocalDateTime interviewDate, String interviewLocation) {
+    Application application = applicationRepository.findById(applicationId)
+        .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    application.setStatus(Application.ApplicationStatus.INTERVIEW_SCHEDULED);
+    application.setInterviewDate(interviewDate);
+    application.setInterviewLocation(interviewLocation);
+    return applicationRepository.save(application);
+  }
+
+  @Override
+  @Transactional
+  public Application addInterviewNotes(Long applicationId, String notes) {
+    Application application = applicationRepository.findById(applicationId)
+        .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
+    application.setInterviewNotes(notes);
     return applicationRepository.save(application);
   }
 }

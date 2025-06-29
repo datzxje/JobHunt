@@ -29,7 +29,9 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
     if (requestURI.contains("/api/v1/auth/login") ||
         requestURI.contains("/api/v1/auth/signup") ||
         requestURI.contains("/api/v1/auth/refresh-token") ||
-        requestURI.contains("/api/v1/auth/logout")) {
+        requestURI.contains("/api/v1/auth/logout") ||
+        requestURI.contains("/api/v1/jobs")
+    ) {
       log.debug("Skipping cookie filter for auth endpoint: {}", requestURI);
       filterChain.doFilter(request, response);
       return;

@@ -10,6 +10,7 @@ import com.jobhunt.model.response.CompanySelectionResponse;
 import com.jobhunt.model.response.UserResponse;
 import com.jobhunt.repository.CompanyRepository;
 import com.jobhunt.repository.UserRepository;
+import com.jobhunt.repository.JobRepository;
 import com.jobhunt.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class CompanyServiceImpl implements CompanyService {
   private final CompanyRepository companyRepository;
   private final UserRepository userRepository;
   private final CompanyMapper companyMapper;
+  private final JobRepository jobRepository;
 
   @Override
   @Transactional
@@ -88,16 +90,24 @@ public class CompanyServiceImpl implements CompanyService {
 
   @Override
   public CompanyResponse getCompany(Long id) {
-    return companyRepository.findById(id)
-        .map(companyMapper::toResponse)
+    Company company = companyRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+
+    CompanyResponse response = companyMapper.toResponse(company);
+    response.setActiveJobsCount(jobRepository.countActiveJobsByCompanyId(company.getId()));
+
+    return response;
   }
 
   @Transactional(readOnly = true)
   public Page<CompanyResponse> getAllCompanies(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
     return companyRepository.findAll(pageable)
-        .map(companyMapper::toResponse);
+        .map(company -> {
+          CompanyResponse response = companyMapper.toResponse(company);
+          response.setActiveJobsCount(jobRepository.countActiveJobsByCompanyId(company.getId()));
+          return response;
+        });
   }
 
   @Override
@@ -107,9 +117,13 @@ public class CompanyServiceImpl implements CompanyService {
     var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    return companyRepository.findByUserIdAndActiveTrue(user.getId())
-        .map(companyMapper::toResponse)
+    Company company = companyRepository.findByUserIdAndActiveTrue(user.getId())
         .orElseThrow(() -> new ResourceNotFoundException("Company not found for current user"));
+
+    CompanyResponse response = companyMapper.toResponse(company);
+    response.setActiveJobsCount(jobRepository.countActiveJobsByCompanyId(company.getId()));
+
+    return response;
   }
 
   @Override

@@ -2,6 +2,8 @@ package com.jobhunt.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,7 +11,8 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "company_members", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "company_id" }))
-@Data
+@Getter
+@Setter
 public class CompanyMember {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

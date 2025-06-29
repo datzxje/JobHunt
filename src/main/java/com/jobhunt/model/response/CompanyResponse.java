@@ -1,8 +1,11 @@
 package com.jobhunt.model.response;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class CompanyResponse {
   // Company Profile Section
   private String id;
@@ -35,6 +38,7 @@ public class CompanyResponse {
   // Additional Information
   private Double averageRating;
   private Long totalReviews;
+  private Long activeJobsCount;
   private Boolean active;
   private String createdAt;
   private String updatedAt;

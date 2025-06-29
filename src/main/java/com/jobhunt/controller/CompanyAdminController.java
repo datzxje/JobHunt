@@ -37,8 +37,6 @@ public class CompanyAdminController {
   private final CompanyMemberService memberService;
   private final CompanyAuthorizationService authorizationService;
 
-  // =============== JOIN REQUESTS ENDPOINTS ===============
-
   @GetMapping("/join-requests")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> getJoinRequests(
@@ -50,7 +48,6 @@ public class CompanyAdminController {
     log.info("Getting join requests for company: {}, page: {}, size: {}, status: {}",
         companyId, page, size, status);
 
-    // Validate admin access to company
     authorizationService.validateAdminAccess(companyId);
 
     Pageable pageable = PageRequest.of(page, size);

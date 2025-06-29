@@ -24,6 +24,7 @@ public interface CompanyMapper {
 
   @Mapping(target = "averageRating", expression = "java(calculateAverageRating(company))")
   @Mapping(target = "totalReviews", expression = "java(company.getReviews() != null ? (long)company.getReviews().size() : 0L)")
+  @Mapping(target = "activeJobsCount", ignore = true) // Will be set manually in service
   CompanyResponse toResponse(Company company);
 
   @Mapping(target = "id", ignore = true)

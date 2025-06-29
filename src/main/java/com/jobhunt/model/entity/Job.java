@@ -1,9 +1,12 @@
 package com.jobhunt.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +16,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "jobs")
-@Data
+@Setter
+@Getter
 public class Job {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,22 +107,21 @@ public class Job {
   @OneToMany(mappedBy = "job")
   private Set<SavedJob> savedByUsers = new HashSet<>();
 
-  // Many-to-Many relationships
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "job_categories_mapping", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "category_id"))
-  private Set<JobCategory> categories = new HashSet<>();
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "categories")
+  private String categories;
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "job_skills_mapping", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))
-  private Set<Skill> requiredSkills = new HashSet<>();
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "required_skills")
+  private String requiredSkills;
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(name = "job_languages_mapping", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "language_id"))
-  private Set<Language> requiredLanguages = new HashSet<>();
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "required_languages")
+  private String requiredLanguages;
 
-  // Job Requirements for ranking/filtering
-  @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
-  private Set<JobRequirement> jobRequirements = new HashSet<>();
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "job_requirements")
+  private String jobRequirements;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

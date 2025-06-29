@@ -40,7 +40,7 @@ public class SecurityConfig {
                                                                 "/api/v1/auth/logout",
                                                                 "/api/v1/auth/reset-password/**",
                                                                 "/api/v1/admin/setup-company",
-                                                                "api/v1/companies/**",
+                                                                "/api/v1/companies/**",
                                                                 "/api/v1/jobs/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())

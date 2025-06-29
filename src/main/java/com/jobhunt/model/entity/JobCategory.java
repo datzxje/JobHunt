@@ -2,6 +2,8 @@ package com.jobhunt.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,7 +13,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "job_categories")
-@Data
+@Setter
+@Getter
 public class JobCategory {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,8 +29,9 @@ public class JobCategory {
   @Column(nullable = false)
   private boolean active = true;
 
-  @ManyToMany(mappedBy = "categories")
-  private Set<Job> jobs = new HashSet<>();
+  // Removed ManyToMany relationship - now using JSON in Job entity
+  // @ManyToMany(mappedBy = "categories")
+  // private Set<Job> jobs = new HashSet<>();
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
