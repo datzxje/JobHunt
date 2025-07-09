@@ -1,5 +1,6 @@
 package com.jobhunt.repository;
 
+import com.jobhunt.model.entity.Company;
 import com.jobhunt.model.entity.CompanyMember;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface CompanyMemberRepository extends JpaRepository<CompanyMember, Long> {
@@ -55,4 +57,14 @@ public interface CompanyMemberRepository extends JpaRepository<CompanyMember, Lo
                         Long userId,
                         CompanyMember.MemberRole role,
                         CompanyMember.MemberStatus status);
+
+        List<CompanyMember> findByUserIdAndStatus(
+                        Long userId,
+                        CompanyMember.MemberStatus status);
+
+        // Method for email notifications - find active members by company and role
+        @Query("SELECT cm FROM CompanyMember cm " +
+                        "WHERE cm.company = :company AND cm.role = :role AND cm.status = 'ACTIVE'")
+        Set<CompanyMember> findByCompanyAndRole(@Param("company") Company company,
+                        @Param("role") CompanyMember.MemberRole role);
 }

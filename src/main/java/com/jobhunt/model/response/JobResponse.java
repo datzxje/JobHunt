@@ -47,4 +47,8 @@ public class JobResponse {
 
   // Company information
   private CompanyBasicResponse company;
+
+  // User information
+  private UserBasicResponse postedBy;
+  private UserBasicResponse assignedTo;
 }

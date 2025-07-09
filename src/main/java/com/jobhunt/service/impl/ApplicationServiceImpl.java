@@ -8,6 +8,7 @@ import com.jobhunt.model.entity.Job;
 import com.jobhunt.model.entity.User;
 import com.jobhunt.model.request.ApplicationRequest;
 import com.jobhunt.model.request.ApplicationUpdateRequest;
+import com.jobhunt.model.response.ApplicationResponse;
 import com.jobhunt.repository.ApplicationRepository;
 import com.jobhunt.repository.JobRepository;
 import com.jobhunt.repository.UserRepository;
@@ -17,12 +18,15 @@ import com.jobhunt.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -45,12 +49,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     Job job = jobRepository.findById(request.getJobId())
         .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-    // Check if user has already applied
     if (applicationRepository.existsByUserAndJob(user, job)) {
       throw new BadRequestException("You have already applied for this job");
     }
 
-    // Upload CV to S3
     String cvUrl = fileStorageService.uploadFile(cv, "cv");
 
     Application application = new Application();
@@ -58,7 +60,6 @@ public class ApplicationServiceImpl implements ApplicationService {
     application.setJob(job);
     application.setCvUrl(cvUrl);
     application.setCoverLetter(request.getCoverLetter());
-    application.setExpectedSalary(request.getExpectedSalary());
     application.setStatus(Application.ApplicationStatus.PENDING);
 
     return applicationRepository.save(application);
@@ -71,10 +72,18 @@ public class ApplicationServiceImpl implements ApplicationService {
   }
 
   @Override
-  public Page<Application> getUserApplications(Pageable pageable) {
+  public Page<ApplicationResponse> getUserApplications(Pageable pageable) {
     User user = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
-    return applicationRepository.findByUser(user, pageable);
+
+    Page<Application> applications = applicationRepository.findByUser(user, pageable);
+
+    List<ApplicationResponse> applicationResponses = applications.getContent()
+        .stream()
+        .map(ApplicationResponse::fromEntity)
+        .collect(Collectors.toList());
+
+    return new PageImpl<>(applicationResponses, pageable, applications.getTotalElements());
   }
 
   @Override
@@ -97,7 +106,6 @@ public class ApplicationServiceImpl implements ApplicationService {
   public void withdrawApplication(Long id) {
     Application application = getApplication(id);
 
-    // Check if the current user is the owner of the application
     User currentUser = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
 
@@ -105,7 +113,6 @@ public class ApplicationServiceImpl implements ApplicationService {
       throw new BadRequestException("You can only withdraw your own applications");
     }
 
-    // Delete CV from S3
     if (application.getCvUrl() != null) {
       fileStorageService.deleteFile(application.getCvUrl());
     }
@@ -118,7 +125,6 @@ public class ApplicationServiceImpl implements ApplicationService {
   public Application updateApplication(Long id, ApplicationUpdateRequest request, MultipartFile cv) {
     Application application = getApplication(id);
 
-    // Check if the current user is the owner of the application
     User currentUser = userRepository.findByEmail(authService.getCurrentUser().getEmail())
         .orElseThrow(() -> new BadRequestException("User not found"));
 
@@ -126,24 +132,19 @@ public class ApplicationServiceImpl implements ApplicationService {
       throw new BadRequestException("You can only update your own applications");
     }
 
-    // Check if application is in an editable state
     if (application.getStatus() != Application.ApplicationStatus.PENDING &&
         application.getStatus() != Application.ApplicationStatus.REVIEWING) {
       throw new BadRequestException("Application cannot be edited in its current status");
     }
 
-    // Update CV if provided
     if (cv != null && !cv.isEmpty()) {
-      // Delete old CV from S3
       if (application.getCvUrl() != null) {
         fileStorageService.deleteFile(application.getCvUrl());
       }
-      // Upload new CV
       String cvUrl = fileStorageService.uploadFile(cv, "cv");
       application.setCvUrl(cvUrl);
     }
 
-    // Update other fields
     application.setCoverLetter(request.getCoverLetter());
     application.setExpectedSalary(request.getExpectedSalary());
 
@@ -153,7 +154,6 @@ public class ApplicationServiceImpl implements ApplicationService {
   @Override
   @Transactional
   public Application createApplication(Long userId, ApplicationRequest request) {
-    // Validate JSON format of candidate profile
     try {
       objectMapper.readTree(request.getCandidateProfile());
     } catch (Exception e) {
@@ -166,7 +166,6 @@ public class ApplicationServiceImpl implements ApplicationService {
     Job job = jobRepository.findById(request.getJobId())
         .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-    // Check if user has already applied
     if (applicationRepository.existsByUserAndJob(user, job)) {
       throw new IllegalStateException("You have already applied for this job");
     }
@@ -175,7 +174,6 @@ public class ApplicationServiceImpl implements ApplicationService {
         .user(user)
         .job(job)
         .coverLetter(request.getCoverLetter())
-        .expectedSalary(request.getExpectedSalary())
         .candidateProfile(request.getCandidateProfile())
         .status(Application.ApplicationStatus.PENDING)
         .build();
@@ -187,7 +185,6 @@ public class ApplicationServiceImpl implements ApplicationService {
   @Transactional
   public Application createApplication(Long userId, Long jobId, String coverLetter, Double expectedSalary,
       String candidateProfile, MultipartFile cv) {
-    // Validate JSON format of candidate profile
     try {
       objectMapper.readTree(candidateProfile);
     } catch (Exception e) {
@@ -200,12 +197,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     Job job = jobRepository.findById(jobId)
         .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
 
-    // Check if user has already applied
     if (applicationRepository.existsByUserAndJob(user, job)) {
       throw new IllegalStateException("You have already applied for this job");
     }
 
-    // Upload CV to S3
     String cvUrl = fileStorageService.uploadFile(cv, "cv");
 
     Application application = Application.builder()

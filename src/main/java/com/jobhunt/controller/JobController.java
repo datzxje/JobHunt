@@ -115,6 +115,23 @@ public class JobController {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.getSavedJobs(page, size)));
   }
 
+  @GetMapping("/assigned")
+  @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
+  public ResponseEntity<?> getAssignedJobs(
+      @RequestParam Long assignedToUserId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getJobsAssignedToUser(assignedToUserId, page, size)));
+  }
+
+  @GetMapping("/company/{companyId}/expired")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> getExpiredJobsByCompany(@PathVariable Long companyId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getExpiredJobsByCompany(companyId, page, size)));
+  }
+
   // Endpoints for form data
   @GetMapping("/form-data/skills")
   public ResponseEntity<?> getAllSkills() {

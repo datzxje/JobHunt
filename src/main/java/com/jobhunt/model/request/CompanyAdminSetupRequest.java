@@ -69,4 +69,9 @@ public class CompanyAdminSetupRequest {
   private String adminPhoneNumber;
 
   private String adminProfilePictureUrl;
+
+  private String logoUrl;
+  private String facebookUrl;
+  private String twitterUrl;
+  private String linkedinUrl;
 }

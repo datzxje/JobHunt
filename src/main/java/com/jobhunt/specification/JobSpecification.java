@@ -101,6 +101,10 @@ public class JobSpecification {
     return (root, query, builder) -> builder.equal(root.get("active"), active);
   }
 
+  public static Specification<Job> isNotExpired(boolean expired) {
+    return (root, query, builder) -> builder.equal(root.get("expired"), expired);
+  }
+
   public static Specification<Job> hasSalaryRange(BigDecimal minSalary, BigDecimal maxSalary) {
     return (root, query, builder) -> {
       List<Predicate> predicates = new ArrayList<>();
@@ -136,6 +140,7 @@ public class JobSpecification {
       Boolean isRemote, String city, String category, String skill,
       BigDecimal minSalary, BigDecimal maxSalary) {
     return Specification.where(isActive(true))
+        .and(isNotExpired(false)) // Add expired filter
         .and(hasKeyword(keyword))
         .and(hasLocation(location))
         .and(hasEmploymentType(employmentType))

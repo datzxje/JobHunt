@@ -25,14 +25,9 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
     String requestURI = request.getRequestURI();
     log.debug("Processing request: {} {}", request.getMethod(), requestURI);
 
-    // Skip filter for auth endpoints
-    if (requestURI.contains("/api/v1/auth/login") ||
-        requestURI.contains("/api/v1/auth/signup") ||
-        requestURI.contains("/api/v1/auth/refresh-token") ||
-        requestURI.contains("/api/v1/auth/logout") ||
-        requestURI.contains("/api/v1/jobs")
-    ) {
-      log.debug("Skipping cookie filter for auth endpoint: {}", requestURI);
+    // Skip filter for public endpoints that don't need authentication
+    if (isPublicEndpoint(request, requestURI)) {
+      log.debug("Skipping cookie filter for public endpoint: {} {}", request.getMethod(), requestURI);
       filterChain.doFilter(request, response);
       return;
     }
@@ -87,6 +82,65 @@ public class CookieAuthenticationFilter extends OncePerRequestFilter {
     }
 
     return tokenValue;
+  }
+
+  /**
+   * Check if the endpoint is public and doesn't need authentication
+   * This matches the SecurityConfig permitAll() patterns
+   */
+  private boolean isPublicEndpoint(HttpServletRequest request, String requestURI) {
+    String method = request.getMethod();
+
+    // Auth endpoints
+    if (requestURI.contains("/api/v1/auth/login") ||
+        requestURI.contains("/api/v1/auth/signup") ||
+        requestURI.contains("/api/v1/auth/refresh-token") ||
+        requestURI.contains("/api/v1/auth/logout") ||
+        requestURI.contains("/api/v1/auth/reset-password") ||
+        requestURI.contains("/api/v1/auth/oauth")) {
+      return true;
+    }
+
+    // Admin setup
+    if (requestURI.contains("/api/v1/admin/setup-company") ||
+        requestURI.contains("/api/v1/admin/bulk-setup-companies")) {
+      return true;
+    }
+
+    // Public company endpoints (only specific GET methods)
+    if ("GET".equals(method)) {
+      if (requestURI.equals("/api/v1/companies") ||
+          requestURI.equals("/api/v1/companies/simple") ||
+          requestURI.matches("/api/v1/companies/\\d+")) {
+        return true;
+      }
+    }
+
+    if ("POST".equals(method)) {
+      if (requestURI.equals("/api/v1/test/job-expiration/send-reminders-and-notifications")) {
+        return true;
+      }
+    }
+
+    // Public job endpoints (only GET methods)
+    if ("GET".equals(method)) {
+      if (requestURI.equals("/api/v1/jobs") ||
+          requestURI.startsWith("/api/v1/jobs/search") ||
+          requestURI.startsWith("/api/v1/jobs/company/") ||
+          requestURI.startsWith("/api/v1/jobs/form-data/") ||
+          requestURI.matches("/api/v1/jobs/\\d+")) { // /api/v1/jobs/{id}
+        return true;
+      }
+    }
+
+    // Actuator and docs
+    if (requestURI.startsWith("/actuator/") ||
+        requestURI.startsWith("/swagger-ui/") ||
+        requestURI.startsWith("/v3/api-docs/")) {
+      return true;
+    }
+
+    return false;
   }
 
   // Wrapper to override the getHeader() method

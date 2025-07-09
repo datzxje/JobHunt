@@ -1,0 +1,35 @@
+# Maven
+target/
+!target/*.jar
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.coverage/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Temporary
+*.tmp
+*.temp
+
+# Git
+.git/
+.gitignore 

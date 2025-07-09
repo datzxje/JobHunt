@@ -14,6 +14,9 @@ import java.util.List;
 
 @Data
 public class JobRequest {
+  @NotNull(message = "Company ID must not be null")
+  private Long companyId;
+
   @NotBlank(message = "Title must not be empty")
   private String title;
 

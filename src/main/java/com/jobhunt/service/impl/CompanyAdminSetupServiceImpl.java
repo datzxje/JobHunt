@@ -6,7 +6,9 @@ import com.jobhunt.model.entity.Company;
 import com.jobhunt.model.entity.CompanyMember;
 import com.jobhunt.model.entity.User;
 import com.jobhunt.model.request.CompanyAdminSetupRequest;
+import com.jobhunt.model.request.BulkCompanyAdminSetupRequest;
 import com.jobhunt.model.response.CompanyResponse;
+import com.jobhunt.model.response.BulkCompanyAdminSetupResponse;
 import com.jobhunt.repository.CompanyMemberRepository;
 import com.jobhunt.repository.CompanyRepository;
 import com.jobhunt.repository.UserRepository;
@@ -159,6 +161,10 @@ public class CompanyAdminSetupServiceImpl implements CompanyAdminSetupService {
     company.setCity(request.getCity());
     company.setAddress(request.getAddress());
     company.setTaxId(request.getTaxId());
+    company.setLogoUrl(request.getLogoUrl());
+    company.setFacebookUrl(request.getFacebookUrl());
+    company.setTwitterUrl(request.getTwitterUrl());
+    company.setLinkedinUrl(request.getLinkedinUrl());
 
     // Set both user relationships
     company.setUser(adminUser); // Owner/Creator
@@ -177,6 +183,50 @@ public class CompanyAdminSetupServiceImpl implements CompanyAdminSetupService {
     member.setStatus(CompanyMember.MemberStatus.ACTIVE);
 
     companyMemberRepository.save(member);
+  }
+
+  @Override
+  public BulkCompanyAdminSetupResponse setupMultipleCompaniesWithAdmins(BulkCompanyAdminSetupRequest request) {
+    BulkCompanyAdminSetupResponse response = new BulkCompanyAdminSetupResponse();
+
+    log.info("Starting bulk company admin setup for {} companies", request.getCompanies().size());
+
+    for (int i = 0; i < request.getCompanies().size(); i++) {
+      CompanyAdminSetupRequest companyRequest = request.getCompanies().get(i);
+
+      try {
+        log.info("Processing company {} of {}: {}", i + 1, request.getCompanies().size(),
+            companyRequest.getCompanyName());
+
+        // Process each company setup individually
+        CompanyResponse companyResponse = setupCompanyWithAdmin(companyRequest);
+
+        response.addSuccess(i, companyResponse, companyRequest.getCompanyName(),
+            companyRequest.getAdminEmail());
+
+        log.info("Successfully setup company '{}' with admin '{}'",
+            companyRequest.getCompanyName(), companyRequest.getAdminEmail());
+
+      } catch (Exception e) {
+        String errorMessage = e.getMessage();
+        log.error("Failed to setup company '{}' with admin '{}': {}",
+            companyRequest.getCompanyName(), companyRequest.getAdminEmail(), errorMessage, e);
+
+        response.addFailure(i, errorMessage, companyRequest.getCompanyName(),
+            companyRequest.getAdminEmail());
+
+        // If stopOnFirstError is true, break the loop
+        if (request.isStopOnFirstError()) {
+          log.warn("Stopping bulk setup on first error as requested");
+          break;
+        }
+      }
+    }
+
+    log.info("Bulk company admin setup completed. Total: {}, Success: {}, Failures: {}",
+        response.getTotalProcessed(), response.getSuccessCount(), response.getFailureCount());
+
+    return response;
   }
 
   private Keycloak getAdminKeycloak() {

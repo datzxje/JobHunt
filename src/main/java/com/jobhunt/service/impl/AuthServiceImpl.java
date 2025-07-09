@@ -31,6 +31,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
@@ -99,10 +103,8 @@ public class AuthServiceImpl implements AuthService {
       log.debug("Attempting login for user: {}", request.getEmail());
       log.debug("Using Keycloak server URL: {}", authServerUrl);
 
-      // Build the URL
       String tokenUrl = authServerUrl + "/realms/" + realm + "/protocol/openid-connect/token";
 
-      // Build the request body
       String form = "client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
           + "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)
           + "&grant_type=password"
@@ -124,7 +126,6 @@ public class AuthServiceImpl implements AuthService {
         throw new BadRequestException("Invalid credentials");
       }
 
-      // Parse token response
       ObjectMapper mapper = new ObjectMapper();
       AccessTokenResponse tokenResponse = mapper.readValue(response.body(), AccessTokenResponse.class);
 
@@ -132,14 +133,13 @@ public class AuthServiceImpl implements AuthService {
       String refreshToken = tokenResponse.getRefreshToken();
       log.debug("Successfully obtained tokens from Keycloak");
 
-      // Lookup user
       User user = userRepository.findByEmail(request.getEmail())
           .orElseThrow(() -> new BadRequestException("User not found"));
 
-      // Store tokens in cookies
       addTokenCookies(accessToken, refreshToken);
 
-      // Return auth response
+      setSecurityContext(user, accessToken);
+
       return AuthResponse.builder()
           .tokenType("Bearer")
           .expiresIn((long) accessTokenExpiration)
@@ -170,15 +170,10 @@ public class AuthServiceImpl implements AuthService {
       throw new BadRequestException("Username already exists");
     }
 
-    // Validate company selection for EMPLOYER role
     if ("EMPLOYER".equals(request.getRole())) {
       if (request.getCompanyId() == null) {
         throw new BadRequestException("Company selection is required for EMPLOYER role");
       }
-
-      // Verify company exists
-      Company company = companyRepository.findById(request.getCompanyId())
-          .orElseThrow(() -> new BadRequestException("Selected company not found"));
     }
 
     Keycloak keycloak = getAdminKeycloak();
@@ -207,7 +202,6 @@ public class AuthServiceImpl implements AuthService {
           (body != null ? ": " + body : ""));
     }
 
-    // Set password
     String userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
 
     CredentialRepresentation passwordCred = new CredentialRepresentation();
@@ -217,7 +211,6 @@ public class AuthServiceImpl implements AuthService {
 
     usersResource.get(userId).resetPassword(passwordCred);
 
-    // Assign role in Keycloak only
     try {
       var roleRepresentation = realmResource.roles().get(request.getRole()).toRepresentation();
       usersResource.get(userId).roles().realmLevel().add(List.of(roleRepresentation));
@@ -226,7 +219,6 @@ public class AuthServiceImpl implements AuthService {
       log.warn("Failed to assign role in Keycloak, but user created successfully: {}", e.getMessage());
     }
 
-    // Create user in database (without roles)
     User newUser;
     try {
       newUser = new User();
@@ -246,7 +238,6 @@ public class AuthServiceImpl implements AuthService {
       throw new BadRequestException("Failed to create user in database: " + e.getMessage());
     }
 
-    // Create join request for EMPLOYER role
     if ("EMPLOYER".equals(request.getRole())) {
       try {
         Company company = companyRepository.findById(request.getCompanyId()).get();
@@ -275,16 +266,15 @@ public class AuthServiceImpl implements AuthService {
       }
     }
 
-    // Log the user in
     return login(new LoginRequest(request.getEmail(), request.getPassword()));
   }
 
   @Override
   public void logout() {
-    // Clear cookies first
+    clearSecurityContext();
+
     removeTokenCookies();
 
-    // Try to logout from Keycloak if we can identify the user
     try {
       String username = getCurrentUser().getEmail();
       if (username != null) {
@@ -308,7 +298,6 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public AuthResponse refreshToken() {
     try {
-      // Try from header first (useful for Postman testing)
       String authHeader = request.getHeader("Authorization");
       String refreshToken = null;
 
@@ -316,13 +305,11 @@ public class AuthServiceImpl implements AuthService {
         log.debug("Found refresh token in Authorization header");
         refreshToken = authHeader.substring(7);
       } else {
-        // Then try from cookie
         log.debug("Trying to get refresh token from cookie");
         refreshToken = getCookieValue("refresh_token")
             .orElseThrow(() -> new BadRequestException("No refresh token found"));
       }
 
-      // Check if token appears to be valid JWT
       if (!isValidJwtFormat(refreshToken)) {
         log.warn("Refresh token has invalid format, clearing cookies and redirecting to login");
         removeTokenCookies();
@@ -335,7 +322,6 @@ public class AuthServiceImpl implements AuthService {
 
       log.debug("Using token URL: {}", tokenUrl);
 
-      // Prepare form data
       String formData = String.format(
           "client_id=%s&client_secret=%s&grant_type=refresh_token&refresh_token=%s",
           clientId, clientSecret, refreshToken);
@@ -348,15 +334,12 @@ public class AuthServiceImpl implements AuthService {
       connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
       connection.setDoOutput(true);
 
-      // Send request
       try (java.io.OutputStream os = connection.getOutputStream()) {
         byte[] input = formData.getBytes(StandardCharsets.UTF_8);
         os.write(input, 0, input.length);
       }
 
-      // Read response
       if (connection.getResponseCode() != 200) {
-        // Read error response body for more details
         StringBuilder errorResponse = new StringBuilder();
         try (java.io.BufferedReader br = new java.io.BufferedReader(
             new java.io.InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8))) {
@@ -367,10 +350,9 @@ public class AuthServiceImpl implements AuthService {
         }
         log.error("Token refresh failed - Status: {}, Error: {}, URL: {}",
             connection.getResponseCode(),
-            errorResponse.toString(),
+            errorResponse,
             tokenUrl);
 
-        // If token is invalid, clear cookies and ask user to log in again
         if (errorResponse.toString().contains("invalid_token") ||
             errorResponse.toString().contains("Invalid refresh token")) {
           log.warn("Invalid refresh token detected, clearing cookies");
@@ -382,32 +364,28 @@ public class AuthServiceImpl implements AuthService {
             (!errorResponse.isEmpty() ? " - Details: " + errorResponse : ""));
       }
 
-      // Parse JSON response
       ObjectMapper mapper = new ObjectMapper();
       JsonNode tokenResponse;
       try (java.io.InputStream in = connection.getInputStream()) {
         tokenResponse = mapper.readTree(in);
       }
 
-      // Extract tokens
       String newAccessToken = tokenResponse.get("access_token").asText();
       String newRefreshToken = tokenResponse.get("refresh_token").asText();
       int expiresIn = tokenResponse.get("expires_in").asInt();
 
       log.debug("Token refresh successful, setting new cookies");
 
-      // Set cookies
       addTokenCookies(newAccessToken, newRefreshToken);
 
-      // Decode JWT để lấy thông tin người dùng
       Jwt jwt = jwtDecoder.decode(newAccessToken);
 
-      // Lấy email từ token
       String email = extractEmailFromJwt(jwt);
 
-      // Tìm user trong database
       User user = userRepository.findByEmail(email)
           .orElseThrow(() -> new BadRequestException("User not found with email: " + email));
+
+      setSecurityContext(user, newAccessToken);
 
       return AuthResponse.builder()
           .tokenType("Bearer")
@@ -557,6 +535,77 @@ public class AuthServiceImpl implements AuthService {
     }
   }
 
+  @Override
+  public User getCurrentUserEntity() {
+    try {
+      // Lấy access token từ cookie
+      String accessToken = getCookieValue("access_token")
+          .orElse(null);
+
+      if (accessToken == null) {
+        log.debug("No access token found in cookies");
+        return null;
+      }
+
+      // Kiểm tra token có định dạng JWT hợp lệ
+      if (!isValidJwtFormat(accessToken)) {
+        log.warn("Invalid token format in cookie");
+        return null;
+      }
+
+      // Gọi Keycloak UserInfo endpoint
+      String userInfoUrl = authServerUrl + "/realms/" + realm + "/protocol/openid-connect/userinfo";
+      log.debug("Calling UserInfo endpoint: {}", userInfoUrl);
+
+      HttpRequest httpRequest = HttpRequest.newBuilder()
+          .uri(URI.create(userInfoUrl))
+          .header("Authorization", "Bearer " + accessToken)
+          .GET()
+          .build();
+
+      HttpClient client = HttpClient.newHttpClient();
+      HttpResponse<String> userInfoResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+      if (userInfoResponse.statusCode() != 200) {
+        log.debug("Failed to get user info. HTTP status: {}", userInfoResponse.statusCode());
+        return null;
+      }
+
+      // Parse user info response
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode userInfo = mapper.readTree(userInfoResponse.body());
+      log.debug("UserInfo response: {}", userInfoResponse.body());
+
+      // Lấy email từ response
+      String email = null;
+      if (userInfo.has("email")) {
+        email = userInfo.get("email").asText();
+      }
+
+      if (email == null && userInfo.has("preferred_username")) {
+        email = userInfo.get("preferred_username").asText();
+      }
+
+      if (email == null && userInfo.has("sub")) {
+        email = userInfo.get("sub").asText();
+      }
+
+      if (email == null || email.isEmpty()) {
+        log.debug("Could not extract email from UserInfo response");
+        return null;
+      }
+
+      log.debug("Extracted email from UserInfo: {}", email);
+
+      // Tìm user trong database
+      return userRepository.findByEmail(email).orElse(null);
+
+    } catch (Exception e) {
+      log.debug("Error getting current user entity: {}", e.getMessage());
+      return null; // Return null instead of throwing exception for optional authentication
+    }
+  }
+
   private Keycloak getAdminKeycloak() {
     return KeycloakBuilder.builder()
         .serverUrl(authServerUrl)
@@ -676,6 +725,53 @@ public class AuthServiceImpl implements AuthService {
 
     // Make validation less strict
     return true;
+  }
+
+  /**
+   * Set user information in SecurityContext for the current request
+   */
+  private void setSecurityContext(User user, String accessToken) {
+    try {
+      log.debug("Setting SecurityContext for user: {} with role: {}", user.getEmail(), user.getRole());
+
+      // Create authorities based on user role
+      List<SimpleGrantedAuthority> authorities = List.of(
+          new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+
+      log.debug("Created authorities: {}", authorities);
+
+      // Create authentication object
+      Authentication authentication = new UsernamePasswordAuthenticationToken(
+          user.getEmail(), // principal
+          accessToken, // credentials (access token)
+          authorities // authorities
+      );
+
+      // Set in SecurityContext
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+
+      log.info("Successfully set SecurityContext for user: {} with authorities: {}",
+          user.getEmail(), authentication.getAuthorities());
+
+    } catch (Exception e) {
+      log.error("Failed to set SecurityContext for user: {}. Error: {}",
+          user.getEmail(), e.getMessage(), e);
+      // Don't throw exception, just log warning since this is not critical for login
+      // flow
+    }
+  }
+
+  /**
+   * Clear SecurityContext for the current request
+   */
+  private void clearSecurityContext() {
+    try {
+      log.debug("Clearing SecurityContext");
+      SecurityContextHolder.clearContext();
+      log.debug("Successfully cleared SecurityContext");
+    } catch (Exception e) {
+      log.warn("Failed to clear SecurityContext. Error: {}", e.getMessage());
+    }
   }
 
 }

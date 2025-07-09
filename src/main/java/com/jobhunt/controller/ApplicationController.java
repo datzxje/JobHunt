@@ -44,13 +44,13 @@ public class ApplicationController {
   }
 
   @GetMapping("/job/{jobId}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
   public ResponseEntity<?> getJobApplications(@PathVariable Long jobId, Pageable pageable) {
     return ResponseEntity.ok(Response.ofSucceeded(applicationService.getJobApplications(jobId, pageable)));
   }
 
   @PatchMapping("/{id}/status")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
   public ResponseEntity<?> updateStatus(
       @PathVariable Long id,
       @RequestParam Application.ApplicationStatus status) {
@@ -82,7 +82,7 @@ public class ApplicationController {
   }
 
   @PutMapping("/{applicationId}/status")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
   public ResponseEntity<?> updateApplicationStatus(
       @PathVariable Long applicationId,
       @RequestParam Application.ApplicationStatus status,

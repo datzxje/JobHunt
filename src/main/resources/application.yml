@@ -10,10 +10,30 @@ spring:
     hibernate:
       ddl-auto: update
   datasource:
-    url: jdbc:postgresql://localhost:5432/jobhunt
-    username: jobhunt
-    password: jobhunt
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/jobhunt}
+    username: ${SPRING_DATASOURCE_USERNAME:jobhunt}
+    password: ${SPRING_DATASOURCE_PASSWORD:jobhunt}
     driverClassName: org.postgresql.Driver
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:jobhunt123}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+    default-encoding: UTF-8
   security:
     oauth2:
       resource server:
@@ -60,6 +80,10 @@ app:
       expiration: 3600
     refreshToken:
       expiration: 86400
+  oauth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
+      client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
 
 # Debug logging
 logging:

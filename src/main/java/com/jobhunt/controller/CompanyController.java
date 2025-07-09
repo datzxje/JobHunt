@@ -17,14 +17,14 @@ public class CompanyController {
   private final CompanyService companyService;
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateCompany(@PathVariable Long id,
       @Valid @RequestBody CompanyRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.updateCompany(id, request)));
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteCompany(@PathVariable Long id) {
     companyService.deleteCompany(id);
     return ResponseEntity.ok(Response.ofSucceeded());

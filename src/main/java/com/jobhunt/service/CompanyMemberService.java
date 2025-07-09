@@ -54,4 +54,12 @@ public interface CompanyMemberService {
    * @return List of company memberships where user is admin
    */
   List<CompanyMemberResponse> getAdminMemberships(Long userId);
+
+  /**
+   * Get all active memberships for a user (regardless of role)
+   * 
+   * @param userId The user ID
+   * @return List of active company memberships for the user
+   */
+  List<CompanyMemberResponse> getActiveMemberships(Long userId);
 }

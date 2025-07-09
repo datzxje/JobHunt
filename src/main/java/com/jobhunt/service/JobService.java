@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface JobService {
   JobResponse createJob(JobRequest request);
@@ -34,4 +35,17 @@ public interface JobService {
   void unsaveJob(Long id);
 
   Page<JobResponse> getSavedJobs(int page, int size);
+
+  // Job assignment methods
+  void assignJob(Long jobId, Long userId, Long companyId);
+
+  void unassignJob(Long jobId, Long companyId);
+
+  Map<String, Object> getJobAssignment(Long jobId, Long companyId);
+
+  // Get jobs assigned to a specific user
+  Page<JobResponse> getJobsAssignedToUser(Long userId, int page, int size);
+
+  // Method to get expired jobs for company admin
+  Page<JobResponse> getExpiredJobsByCompany(Long companyId, int page, int size);
 }

@@ -14,7 +14,6 @@ public interface CompanyBasicMapper {
   @Mapping(target = "activeJobsCount", ignore = true) // Will be set manually in service
   CompanyBasicResponse toBasicResponse(Company company);
 
-  // Helper method to calculate average rating
   default Double calculateAverageRating(Company company) {
     if (company.getReviews() == null || company.getReviews().isEmpty()) {
       return 0.0;

@@ -11,6 +11,7 @@ import com.jobhunt.payload.Response;
 import com.jobhunt.service.CompanyAuthorizationService;
 import com.jobhunt.service.CompanyJoinRequestService;
 import com.jobhunt.service.CompanyMemberService;
+import com.jobhunt.service.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class CompanyAdminController {
   private final CompanyJoinRequestService joinRequestService;
   private final CompanyMemberService memberService;
   private final CompanyAuthorizationService authorizationService;
+  private final JobService jobService;
 
   @GetMapping("/join-requests")
   @PreAuthorize("hasRole('ADMIN')")
@@ -301,7 +303,7 @@ public class CompanyAdminController {
   // =============== UTILITY ENDPOINTS ===============
 
   @GetMapping("/my-companies")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYER')")
   public ResponseEntity<?> getMyManagedCompanies() {
     Long currentUserId = authorizationService.getCurrentUserId();
     if (currentUserId == null) {
@@ -336,5 +338,85 @@ public class CompanyAdminController {
         "companyId", companyId);
 
     return ResponseEntity.ok(Response.ofSucceeded(result));
+  }
+
+  @GetMapping("/check-user-membership-status")
+  @PreAuthorize("hasRole('CANDIDATE') or hasRole('EMPLOYER') or hasRole('ADMIN')")
+  public ResponseEntity<?> checkUserMembershipStatus(@RequestParam Long userId) {
+    log.info("Checking if user {} is an active member of any company", userId);
+
+    try {
+      // Get all active memberships for the user
+      List<CompanyMemberResponse> activeMemberships = memberService.getActiveMemberships(userId);
+
+      boolean isActiveMember = !activeMemberships.isEmpty();
+
+      Map<String, Object> result = Map.of(
+          "userId", userId,
+          "isActiveMember", isActiveMember,
+          "activeMemberships", activeMemberships,
+          "membershipCount", activeMemberships.size());
+
+      log.info("User {} has {} active memberships", userId, activeMemberships.size());
+
+      return ResponseEntity.ok(Response.ofSucceeded(result));
+    } catch (Exception e) {
+      log.error("Error checking user membership status for user {}: {}", userId, e.getMessage());
+      return ResponseEntity.ok(Response.ofSucceeded(
+          Map.of("userId", userId, "isActiveMember", false, "error", e.getMessage())));
+    }
+  }
+
+  // =============== JOB ASSIGNMENT ENDPOINTS ===============
+
+  @PutMapping("/jobs/{jobId}/assign")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> assignJob(
+      @PathVariable Long jobId,
+      @RequestParam Long userId,
+      @RequestParam Long companyId) {
+
+    log.info("Assigning job: {} to user: {} in company: {}", jobId, userId, companyId);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
+
+    // Validate that the user is a member of the company
+    if (!memberService.isUserMemberOfCompany(userId, companyId)) {
+      throw new AccessDeniedException("User is not a member of this company");
+    }
+
+    jobService.assignJob(jobId, userId, companyId);
+    return ResponseEntity.ok(Response.ofSucceeded("Job assigned successfully"));
+  }
+
+  @PutMapping("/jobs/{jobId}/unassign")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> unassignJob(
+      @PathVariable Long jobId,
+      @RequestParam Long companyId) {
+
+    log.info("Unassigning job: {} in company: {}", jobId, companyId);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
+
+    jobService.unassignJob(jobId, companyId);
+    return ResponseEntity.ok(Response.ofSucceeded("Job unassigned successfully"));
+  }
+
+  @GetMapping("/jobs/{jobId}/assignment")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> getJobAssignment(
+      @PathVariable Long jobId,
+      @RequestParam Long companyId) {
+
+    log.info("Getting assignment for job: {} in company: {}", jobId, companyId);
+
+    // Validate admin access to company
+    authorizationService.validateAdminAccess(companyId);
+
+    Map<String, Object> assignment = jobService.getJobAssignment(jobId, companyId);
+    return ResponseEntity.ok(Response.ofSucceeded(assignment));
   }
 }

@@ -279,4 +279,17 @@ public class CompanyMemberServiceImpl implements CompanyMemberService {
 
     return mapper.toResponseList(adminMemberships);
   }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CompanyMemberResponse> getActiveMemberships(Long userId) {
+    log.info("Getting all active memberships for user: {}", userId);
+
+    List<CompanyMember> activeMemberships = memberRepository.findByUserIdAndStatus(
+        userId,
+        CompanyMember.MemberStatus.ACTIVE);
+
+    log.info("Found {} active memberships for user {}", activeMemberships.size(), userId);
+    return mapper.toResponseList(activeMemberships);
+  }
 }

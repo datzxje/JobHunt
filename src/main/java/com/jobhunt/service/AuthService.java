@@ -1,5 +1,6 @@
 package com.jobhunt.service;
 
+import com.jobhunt.model.entity.User;
 import com.jobhunt.model.request.ChangePasswordRequest;
 import com.jobhunt.model.request.LoginRequest;
 import com.jobhunt.model.request.SignUpRequest;
@@ -27,4 +28,11 @@ public interface AuthService {
    * @return thông tin người dùng hoặc null nếu không xác thực
    */
   UserResponse getCurrentUser();
+
+  /**
+   * Lấy User entity của người dùng hiện tại từ access token
+   * 
+   * @return User entity hoặc null nếu không xác thực
+   */
+  User getCurrentUserEntity();
 }

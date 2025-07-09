@@ -39,9 +39,26 @@ public class SecurityConfig {
                                                                 "/api/v1/auth/refresh-token",
                                                                 "/api/v1/auth/logout",
                                                                 "/api/v1/auth/reset-password/**",
+                                                                "/api/v1/auth/oauth/**",
                                                                 "/api/v1/admin/setup-company",
-                                                                "/api/v1/companies/**",
-                                                                "/api/v1/jobs/**")
+                                                                "/api/v1/admin/bulk-setup-companies")
+                                                .permitAll()
+                                                // Public company endpoints (view companies)
+                                                .requestMatchers("GET", "/api/v1/companies",
+                                                                "/api/v1/companies/simple")
+                                                .permitAll()
+                                                .requestMatchers("GET", "/api/v1/companies/{id:[0-9]+}")
+                                                .permitAll()
+                                                .requestMatchers("POST",
+                                                                "/api/v1/test/job-expiration/send-reminders-and-notifications")
+                                                .permitAll()
+                                                // Public job endpoints (view jobs, search, form data)
+                                                .requestMatchers("GET", "/api/v1/jobs",
+                                                                "/api/v1/jobs/search",
+                                                                "/api/v1/jobs/company/**",
+                                                                "/api/v1/jobs/form-data/**")
+                                                .permitAll()
+                                                .requestMatchers("GET", "/api/v1/jobs/{id:[0-9]+}")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .oauth2ResourceServer(oauth2 -> oauth2

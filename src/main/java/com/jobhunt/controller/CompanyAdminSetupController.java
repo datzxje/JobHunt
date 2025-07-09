@@ -1,6 +1,7 @@
 package com.jobhunt.controller;
 
 import com.jobhunt.model.request.CompanyAdminSetupRequest;
+import com.jobhunt.model.request.BulkCompanyAdminSetupRequest;
 import com.jobhunt.payload.Response;
 import com.jobhunt.service.CompanyAdminSetupService;
 import jakarta.validation.Valid;
@@ -19,5 +20,11 @@ public class CompanyAdminSetupController {
   public ResponseEntity<?> setupCompanyWithAdmin(@Valid @RequestBody CompanyAdminSetupRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(
         companyAdminSetupService.setupCompanyWithAdmin(request)));
+  }
+
+  @PostMapping("/bulk-setup-companies")
+  public ResponseEntity<?> bulkSetupCompaniesWithAdmins(@Valid @RequestBody BulkCompanyAdminSetupRequest request) {
+    return ResponseEntity.ok(Response.ofSucceeded(
+        companyAdminSetupService.setupMultipleCompaniesWithAdmins(request)));
   }
 }

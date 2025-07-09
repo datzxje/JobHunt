@@ -92,6 +92,8 @@ public class Job {
   @Column(nullable = false)
   private boolean active = true;
 
+  private boolean expired = false;
+
   // Relationships
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "company_id", nullable = false)
@@ -100,6 +102,10 @@ public class Job {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "posted_by")
   private User postedBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "assigned_to")
+  private User assignedTo;
 
   @OneToMany(mappedBy = "job", cascade = CascadeType.ALL)
   private Set<Application> applications = new HashSet<>();
