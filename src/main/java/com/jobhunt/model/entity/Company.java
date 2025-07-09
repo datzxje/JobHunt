@@ -2,6 +2,8 @@ package com.jobhunt.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,7 +13,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "companies")
-@Data
+@Getter
+@Setter
 public class Company {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +51,7 @@ public class Company {
   @Column(columnDefinition = "TEXT")
   private String about;
 
-  // Social Network Section
+  // Social Network Section (consolidated)
   @Column(name = "facebook_url")
   private String facebookUrl;
 
@@ -61,7 +64,10 @@ public class Company {
   @Column(name = "google_plus_url")
   private String googlePlusUrl;
 
-  // Contact Information Section
+  @Column(name = "social_instagram")
+  private String socialInstagram;
+
+  // Contact Information Section (consolidated)
   private String country;
   private String city;
   private String address;
@@ -71,15 +77,29 @@ public class Company {
   @Column(name = "tax_id", nullable = false, unique = true)
   private String taxId;
 
+  // Company Owner/Creator (the user who initially manages the company)
   @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id", nullable = true)
   private User user;
 
+  // Current Admin User (can be different from owner, used for company admin
+  // operations)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "admin_user_id")
+  private User adminUser;
+
+  // Relationships
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
   private Set<Job> jobs = new HashSet<>();
 
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
   private Set<Review> reviews = new HashSet<>();
+
+  @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+  private Set<CompanyJoinRequest> joinRequests = new HashSet<>();
+
+  @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+  private Set<CompanyMember> members = new HashSet<>();
 
   @Column(nullable = false)
   private boolean active = true;

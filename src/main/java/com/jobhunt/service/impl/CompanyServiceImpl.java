@@ -6,9 +6,11 @@ import com.jobhunt.mapper.CompanyMapper;
 import com.jobhunt.model.entity.Company;
 import com.jobhunt.model.request.CompanyRequest;
 import com.jobhunt.model.response.CompanyResponse;
+import com.jobhunt.model.response.CompanySelectionResponse;
 import com.jobhunt.model.response.UserResponse;
 import com.jobhunt.repository.CompanyRepository;
 import com.jobhunt.repository.UserRepository;
+import com.jobhunt.repository.JobRepository;
 import com.jobhunt.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +20,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class CompanyServiceImpl implements CompanyService {
@@ -25,6 +30,7 @@ public class CompanyServiceImpl implements CompanyService {
   private final CompanyRepository companyRepository;
   private final UserRepository userRepository;
   private final CompanyMapper companyMapper;
+  private final JobRepository jobRepository;
 
   @Override
   @Transactional
@@ -51,7 +57,10 @@ public class CompanyServiceImpl implements CompanyService {
     var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    if (!company.getUser().getId().equals(user.getId())) {
+    // If company doesn't have a user assigned yet, assign current user as owner
+    if (company.getUser() == null) {
+      company.setUser(user);
+    } else if (!company.getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to update this company");
     }
 
@@ -70,7 +79,8 @@ public class CompanyServiceImpl implements CompanyService {
     var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    if (!company.getUser().getId().equals(user.getId())) {
+    // Only allow deletion if user owns the company or company has no owner
+    if (company.getUser() != null && !company.getUser().getId().equals(user.getId())) {
       throw new BadRequestException("You don't have permission to delete this company");
     }
 
@@ -80,16 +90,24 @@ public class CompanyServiceImpl implements CompanyService {
 
   @Override
   public CompanyResponse getCompany(Long id) {
-    return companyRepository.findById(id)
-        .map(companyMapper::toResponse)
+    Company company = companyRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+
+    CompanyResponse response = companyMapper.toResponse(company);
+    response.setActiveJobsCount(jobRepository.countActiveJobsByCompanyId(company.getId()));
+
+    return response;
   }
 
   @Transactional(readOnly = true)
   public Page<CompanyResponse> getAllCompanies(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
     return companyRepository.findAll(pageable)
-        .map(companyMapper::toResponse);
+        .map(company -> {
+          CompanyResponse response = companyMapper.toResponse(company);
+          response.setActiveJobsCount(jobRepository.countActiveJobsByCompanyId(company.getId()));
+          return response;
+        });
   }
 
   @Override
@@ -99,8 +117,25 @@ public class CompanyServiceImpl implements CompanyService {
     var user = userRepository.findByKeycloakId(currentUserId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-    return companyRepository.findByUserIdAndActiveTrue(user.getId())
-        .map(companyMapper::toResponse)
+    Company company = companyRepository.findByUserIdAndActiveTrue(user.getId())
         .orElseThrow(() -> new ResourceNotFoundException("Company not found for current user"));
+
+    CompanyResponse response = companyMapper.toResponse(company);
+    response.setActiveJobsCount(jobRepository.countActiveJobsByCompanyId(company.getId()));
+
+    return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<CompanySelectionResponse> getCompaniesForSelection() {
+    return companyRepository.findByActiveTrue()
+        .stream()
+        .map(company -> new CompanySelectionResponse(
+            company.getId(),
+            company.getName(),
+            company.getLogoUrl(),
+            company.getIndustryType()))
+        .collect(Collectors.toList());
   }
 }

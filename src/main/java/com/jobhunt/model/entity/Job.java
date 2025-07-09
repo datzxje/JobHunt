@@ -1,9 +1,12 @@
 package com.jobhunt.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +16,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "jobs")
-@Data
+@Setter
+@Getter
 public class Job {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,8 +45,20 @@ public class Job {
   @Column(name = "experience_level")
   private String experienceLevel;
 
+  @Column(name = "career_level")
+  private String careerLevel;
+
   @Column(nullable = false)
   private String location;
+
+  @Column
+  private String country;
+
+  @Column
+  private String city;
+
+  @Column
+  private String address;
 
   @Column(name = "is_remote")
   private boolean isRemote;
@@ -50,15 +66,68 @@ public class Job {
   @Column(name = "application_deadline")
   private LocalDateTime applicationDeadline;
 
+  // New fields from frontend form
+  @Column(name = "hours_per_week")
+  private String hoursPerWeek;
+
+  @Column(name = "gender_preference")
+  @Enumerated(EnumType.STRING)
+  private GenderPreference genderPreference;
+
+  @Column(name = "minimum_qualification")
+  private String minimumQualification;
+
+  @Column(name = "minimum_age")
+  private Integer minimumAge;
+
+  @Column(name = "maximum_age")
+  private Integer maximumAge;
+
+  @Column(name = "minimum_experience_years")
+  private Integer minimumExperienceYears;
+
+  @Column(name = "maximum_experience_years")
+  private Integer maximumExperienceYears;
+
   @Column(nullable = false)
   private boolean active = true;
 
+  private boolean expired = false;
+
+  // Relationships
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "company_id", nullable = false)
   private Company company;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "posted_by")
+  private User postedBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "assigned_to")
+  private User assignedTo;
+
   @OneToMany(mappedBy = "job", cascade = CascadeType.ALL)
   private Set<Application> applications = new HashSet<>();
+
+  @OneToMany(mappedBy = "job")
+  private Set<SavedJob> savedByUsers = new HashSet<>();
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "categories")
+  private String categories;
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "required_skills")
+  private String requiredSkills;
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "required_languages")
+  private String requiredLanguages;
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "job_requirements")
+  private String jobRequirements;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -68,14 +137,19 @@ public class Job {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @OneToMany(mappedBy = "job")
-  private Set<SavedJob> savedByUsers = new HashSet<>();
-
   public enum EmploymentType {
     FULL_TIME,
     PART_TIME,
     CONTRACT,
     INTERNSHIP,
-    TEMPORARY
+    TEMPORARY,
+    FREELANCER
+  }
+
+  public enum GenderPreference {
+    NO_PREFERENCE,
+    MALE,
+    FEMALE,
+    OTHER
   }
 }

@@ -16,21 +16,15 @@ public class CompanyController {
 
   private final CompanyService companyService;
 
-  @PostMapping
-  @PreAuthorize("hasRole('EMPLOYER')")
-  public ResponseEntity<?> createCompany(@Valid @RequestBody CompanyRequest request) {
-    return ResponseEntity.ok(Response.ofSucceeded(companyService.createCompany(request)));
-  }
-
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateCompany(@PathVariable Long id,
       @Valid @RequestBody CompanyRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.updateCompany(id, request)));
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteCompany(@PathVariable Long id) {
     companyService.deleteCompany(id);
     return ResponseEntity.ok(Response.ofSucceeded());
@@ -42,9 +36,9 @@ public class CompanyController {
   }
 
   @GetMapping
-  public ResponseEntity<?> getAllUsers(
-          @RequestParam(defaultValue = "0") int page,
-          @RequestParam(defaultValue = "10") int size) {
+  public ResponseEntity<?> getAllCompanies(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.getAllCompanies(page, size)));
   }
 
@@ -52,5 +46,10 @@ public class CompanyController {
   @PreAuthorize("hasRole('EMPLOYER')")
   public ResponseEntity<?> getCurrentUserCompany() {
     return ResponseEntity.ok(Response.ofSucceeded(companyService.getCurrentUserCompany()));
+  }
+
+  @GetMapping("/simple")
+  public ResponseEntity<?> getCompaniesForSelection() {
+    return ResponseEntity.ok(Response.ofSucceeded(companyService.getCompaniesForSelection()));
   }
 }

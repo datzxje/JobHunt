@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobhunt-postgres
+    environment:
+      POSTGRES_DB: jobhunt
+      POSTGRES_USER: jobhunt
+      POSTGRES_PASSWORD: jobhunt
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - jobhunt-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobhunt -d jobhunt"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Keycloak Identity Provider
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.5
+    container_name: jobhunt-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8180
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_DB: dev-file
+    ports:
+      - "8180:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - jobhunt-network
+    restart: unless-stopped
+    command: start-dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: jobhunt-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - jobhunt-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass jobhunt123
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  keycloak_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  jobhunt-network:
+    driver: bridge 

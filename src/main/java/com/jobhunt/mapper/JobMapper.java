@@ -9,28 +9,46 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {
-    CompanyMapper.class })
+    CompanyMapper.class, CompanyBasicMapper.class, UserBasicMapper.class })
 public interface JobMapper {
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "company", ignore = true)
+  @Mapping(target = "postedBy", ignore = true)
+  @Mapping(target = "assignedTo", ignore = true)
   @Mapping(target = "applications", ignore = true)
   @Mapping(target = "savedByUsers", ignore = true)
+  @Mapping(target = "categories", ignore = true)
+  @Mapping(target = "requiredSkills", ignore = true)
+  @Mapping(target = "requiredLanguages", ignore = true)
+  @Mapping(target = "jobRequirements", ignore = true)
   @Mapping(target = "active", constant = "true")
   Job toEntity(JobRequest request);
 
-  @Mapping(target = "numberOfApplications", expression = "java(job.getApplications() != null ? job.getApplications().size() : 0L)")
+  @Mapping(target = "numberOfApplications", ignore = true)
+  @Mapping(target = "categories", source = "categories")
+  @Mapping(target = "requiredSkills", source = "requiredSkills")
+  @Mapping(target = "requiredLanguages", source = "requiredLanguages")
+  @Mapping(target = "jobRequirements", source = "jobRequirements")
   @Mapping(target = "company", source = "company")
+  @Mapping(target = "postedBy", source = "postedBy")
+  @Mapping(target = "assignedTo", source = "assignedTo")
   JobResponse toResponse(Job job);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "company", ignore = true)
+  @Mapping(target = "postedBy", ignore = true)
+  @Mapping(target = "assignedTo", ignore = true)
   @Mapping(target = "applications", ignore = true)
   @Mapping(target = "savedByUsers", ignore = true)
+  @Mapping(target = "categories", ignore = true)
+  @Mapping(target = "requiredSkills", ignore = true)
+  @Mapping(target = "requiredLanguages", ignore = true)
+  @Mapping(target = "jobRequirements", ignore = true)
   @Mapping(target = "active", ignore = true)
   void updateJobFromDto(JobRequest request, @MappingTarget Job job);
 }

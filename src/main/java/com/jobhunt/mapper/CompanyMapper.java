@@ -15,12 +15,16 @@ public interface CompanyMapper {
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "user", ignore = true)
+  @Mapping(target = "adminUser", ignore = true)
   @Mapping(target = "jobs", ignore = true)
   @Mapping(target = "reviews", ignore = true)
+  @Mapping(target = "joinRequests", ignore = true)
+  @Mapping(target = "members", ignore = true)
   Company toEntity(CompanyRequest request);
 
   @Mapping(target = "averageRating", expression = "java(calculateAverageRating(company))")
   @Mapping(target = "totalReviews", expression = "java(company.getReviews() != null ? (long)company.getReviews().size() : 0L)")
+  @Mapping(target = "activeJobsCount", ignore = true) // Will be set manually in service
   CompanyResponse toResponse(Company company);
 
   @Mapping(target = "id", ignore = true)
@@ -28,8 +32,11 @@ public interface CompanyMapper {
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "user", ignore = true)
+  @Mapping(target = "adminUser", ignore = true)
   @Mapping(target = "jobs", ignore = true)
   @Mapping(target = "reviews", ignore = true)
+  @Mapping(target = "joinRequests", ignore = true)
+  @Mapping(target = "members", ignore = true)
   void updateCompanyFromDto(CompanyRequest request, @MappingTarget Company company);
 
   default Double calculateAverageRating(Company company) {

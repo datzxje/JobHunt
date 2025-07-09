@@ -3,6 +3,9 @@ package com.jobhunt.controller;
 import com.jobhunt.model.request.JobRequest;
 import com.jobhunt.payload.Response;
 import com.jobhunt.service.JobService;
+import com.jobhunt.service.SkillService;
+import com.jobhunt.service.JobCategoryService;
+import com.jobhunt.service.LanguageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,21 +18,24 @@ import org.springframework.web.bind.annotation.*;
 public class JobController {
 
   private final JobService jobService;
+  private final SkillService skillService;
+  private final JobCategoryService jobCategoryService;
+  private final LanguageService languageService;
 
   @PostMapping
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.createJob(request)));
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateJob(@PathVariable Long id, @Valid @RequestBody JobRequest request) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.updateJob(id, request)));
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('EMPLOYER')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteJob(@PathVariable Long id) {
     jobService.deleteJob(id);
     return ResponseEntity.ok(Response.ofSucceeded());
@@ -41,19 +47,43 @@ public class JobController {
   }
 
   @GetMapping("/company/{companyId}")
-  public ResponseEntity<?> getCompanyJobs(@PathVariable Long companyId) {
-    return ResponseEntity.ok(Response.ofSucceeded(jobService.getCompanyJobs(companyId)));
+  public ResponseEntity<?> getCompanyJobs(@PathVariable Long companyId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getCompanyJobs(page, size, companyId)));
   }
 
   @GetMapping
+  public ResponseEntity<?> getAllJobs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(
+        jobService.getAllJobs(page, size)));
+  }
+
+  @GetMapping("/search")
   public ResponseEntity<?> searchJobs(
       @RequestParam(required = false) String keyword,
       @RequestParam(required = false) String location,
       @RequestParam(required = false) String employmentType,
       @RequestParam(required = false) String experienceLevel,
-      @RequestParam(required = false) Boolean isRemote) {
+      @RequestParam(required = false) Boolean isRemote,
+      @RequestParam(required = false) String city,
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) String skill,
+      @RequestParam(required = false) Double minSalary,
+      @RequestParam(required = false) Double maxSalary,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(
-        jobService.searchJobs(keyword, location, employmentType, experienceLevel, isRemote)));
+        jobService.searchJobs(page, size, keyword, location, employmentType, experienceLevel, isRemote, city, category,
+            skill, minSalary, maxSalary)));
+  }
+
+  @PostMapping("/{id}/apply")
+  @PreAuthorize("hasRole('CANDIDATE')")
+  public ResponseEntity<?> applyJob(@PathVariable Long id) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.applyJob(id)));
   }
 
   @GetMapping("/applied")
@@ -83,5 +113,38 @@ public class JobController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
     return ResponseEntity.ok(Response.ofSucceeded(jobService.getSavedJobs(page, size)));
+  }
+
+  @GetMapping("/assigned")
+  @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
+  public ResponseEntity<?> getAssignedJobs(
+      @RequestParam Long assignedToUserId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getJobsAssignedToUser(assignedToUserId, page, size)));
+  }
+
+  @GetMapping("/company/{companyId}/expired")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> getExpiredJobsByCompany(@PathVariable Long companyId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(Response.ofSucceeded(jobService.getExpiredJobsByCompany(companyId, page, size)));
+  }
+
+  // Endpoints for form data
+  @GetMapping("/form-data/skills")
+  public ResponseEntity<?> getAllSkills() {
+    return ResponseEntity.ok(Response.ofSucceeded(skillService.getAllActiveSkills()));
+  }
+
+  @GetMapping("/form-data/categories")
+  public ResponseEntity<?> getAllCategories() {
+    return ResponseEntity.ok(Response.ofSucceeded(jobCategoryService.getAllActiveCategories()));
+  }
+
+  @GetMapping("/form-data/languages")
+  public ResponseEntity<?> getAllLanguages() {
+    return ResponseEntity.ok(Response.ofSucceeded(languageService.getAllActiveLanguages()));
   }
 }

@@ -1,8 +1,11 @@
 package com.jobhunt.model.response;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class CompanyResponse {
   // Company Profile Section
   private String id;
@@ -13,7 +16,7 @@ public class CompanyResponse {
   private String phoneNumber;
   private String websiteUrl;
   private Integer establishmentYear;
-  private Integer teamSize;
+  private String teamSize;
   private String industryType;
   private String about;
 
@@ -22,6 +25,7 @@ public class CompanyResponse {
   private String twitterUrl;
   private String linkedinUrl;
   private String googlePlusUrl;
+  private String socialInstagram;
 
   // Contact Information Section
   private String country;
@@ -34,6 +38,7 @@ public class CompanyResponse {
   // Additional Information
   private Double averageRating;
   private Long totalReviews;
+  private Long activeJobsCount;
   private Boolean active;
   private String createdAt;
   private String updatedAt;

@@ -1,0 +1,109 @@
+{
+  "info": {
+    "name": "JobHunt OAuth Test Collection",
+    "description": "Test OAuth endpoints for Google login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Google OAuth URL",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/profile/api/v1/auth/oauth/google/url",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["profile", "api", "v1", "auth", "oauth", "google", "url"]
+        },
+        "description": "Get Google OAuth authorization URL"
+      },
+      "response": []
+    },
+    {
+      "name": "Test OAuth Callback (Mock)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/profile/api/v1/auth/oauth/callback?code=test-code&state=test-state",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["profile", "api", "v1", "auth", "oauth", "callback"],
+          "query": [
+            {
+              "key": "code",
+              "value": "test-code"
+            },
+            {
+              "key": "state",
+              "value": "test-state"
+            }
+          ]
+        },
+        "description": "Test OAuth callback with mock code (should return error)"
+      },
+      "response": []
+    },
+    {
+      "name": "Test OAuth Callback (Error)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/profile/api/v1/auth/oauth/callback?error=access_denied",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["profile", "api", "v1", "auth", "oauth", "callback"],
+          "query": [
+            {
+              "key": "error",
+              "value": "access_denied"
+            }
+          ]
+        },
+        "description": "Test OAuth callback with error parameter"
+      },
+      "response": []
+    },
+    {
+      "name": "Test OAuth Callback (No Code)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/profile/api/v1/auth/oauth/callback",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["profile", "api", "v1", "auth", "oauth", "callback"]
+        },
+        "description": "Test OAuth callback without code parameter"
+      },
+      "response": []
+    }
+  ]
+} 
